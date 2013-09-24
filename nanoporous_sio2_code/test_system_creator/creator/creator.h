@@ -6,7 +6,7 @@
 #include <vector>
 #include "../mts0_io/mts0_io.h"
 // #include <time.h>
-#include <cstdlib> /* srand, rand */
+#include <cstdlib> // srand, rand
 #include <cmath> // floor, cos, sin
 
 using namespace std;
