@@ -11,3 +11,8 @@
 *.lai
 *.la
 *.a
+
+# Stuff
+*.x
+*.pro
+*.pro.user
