@@ -27,7 +27,7 @@ using namespace std;
 
 // char *type[] = {(char*)"Not in use", (char*)"Si",(char*)"A ",(char*)"H ",(char*)"O ",(char*)"Na",(char*)"Cl",(char*)"X "};
 
-const double SI_O_DISTANCE = 1.8;
+//const double SI_O_DISTANCE = 1.8;
 const double PI = atan(1.0)*4.0;
 const double TETRAHEDRAL_ANGLE_RAD = 109.4712*PI/180.0;
 
@@ -35,12 +35,11 @@ struct Atom;
 
 class Creator{
 public:
-    Creator(string mts0_directory_in, int nx, int ny, int nz);
+    Creator(string mts0_directory_in, int nx, int ny, int nz, double Si_O_distance);
 
     void remove_all_atoms();
-    void remove_all_atoms_in_half_system();
-    void cut_system_along_space_diagonal();
-    void add_tetrahedra();
+    void make_test_system_with_four_types_of_tetrahedra();
+    void make_test_system_with_close_tetrahedra();
 
     Mts0_io* mts0_io;
 
@@ -48,13 +47,12 @@ private:
     vector<double> system_size;
     vector<double> half_system_size;
 
-    double weight_normal;
-    double weight_vec_between_existing_oxygen;
-    double weight_vec_sum_existing_oxygen;
+    double SI_O_DISTANCE;
     double length_from_silicon_to_point_in_plane;
     double length_from_point_in_plane_to_new_oxygen;
 
-    vector<Atom> make_tetrahedron(const vector<double> &center, const vector<double> &normal_vector, double Si_O_distance);
+    vector<Atom> make_tetrahedron(const vector<double> &center, const vector<double> &normal_vector, double Si_O_distance, int n_oxygen);
+    vector<Atom> make_inverse_tetrahedron(const vector<double> &center, const vector<double> &normal_vector, double Si_O_distance, int n_oxygen);
     inline void add_atoms(const vector<Atom> &atoms);
     inline void add_atom(const Atom &atom);
 
@@ -64,13 +62,6 @@ private:
     inline vector<double> normalize_vector(const vector<double>& u);
     vector<double> find_vector_in_plane(const vector<double>& normal_vector);
     void ensure_within_periodic_boundaries(vector<double> &position);
-
-    // from Mathilde
-    vector<Atom> make_tetrahedron_mathildes_function(const vector<double> &tetrahedron_center, const vector<double> &normal_vector, double Si_O_distance);
-    Atom find_one_missing_oxygen_atom(Atom silicon, vector<Atom> existing_oxygen);
-    vector<Atom> find_two_missing_oxygen_atoms(Atom silicon, vector<Atom> existing_oxygen);
-    vector<Atom> find_three_missing_oxygen_atoms(Atom silicon, vector<Atom> existing_oxygen);
-    vector<double> calculate_normal_to_plane_from_three_vector_points(const vector<double> &point_1,const vector<double> &point_2,const vector<double> &point_3);
     vector<double> calculate_vector_difference_using_minimum_image_convention(const vector<double> &position1, const vector<double> &position2);
 };
 

@@ -1,14 +1,15 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <cstdio> // remove (remove file)
 #include "creator/creator.h"
 
 using namespace std;
 
 int main(int args, char *argv[]) {
-    if(args != 9) {
+    if(args != 10) {
         cout << "Run program with " << endl;
-        cout << "./executable.x  nx  ny  nz  mts0_directory_in  mts0_directory_out  xyz_output_filename  print_mts0_files[0|1]  print_xyz_file[0|1]" << endl;
+        cout << "./executable.x  nx  ny  nz  mts0_directory_in  mts0_directory_out  xyz_output_filename  print_mts0_files[0|1]  print_xyz_file[0|1]  Si_O_distance" << endl;
         return 0;
     }
 
@@ -20,6 +21,7 @@ int main(int args, char *argv[]) {
     string xyz_output_filename = argv[6];
     bool print_mts0_files = atoi(argv[7]);
     bool print_xyz_file = atoi(argv[8]);
+    double Si_O_distance = atof(argv[9]);
 
     // Testing that we have write permissions, and that the needed output folder exists
     if (print_mts0_files) {
@@ -32,6 +34,7 @@ int main(int args, char *argv[]) {
             exit(1);
         }
         file.close();
+        remove(filename.str().c_str());
     }
     if (print_xyz_file) {
         ofstream file(xyz_output_filename.c_str());
@@ -40,16 +43,15 @@ int main(int args, char *argv[]) {
             exit(1);
         }
         file.close();
+        remove(xyz_output_filename.c_str());
     }
 
-    Creator creator(mts0_directory_in, nx, ny, nz);
+    Creator creator(mts0_directory_in, nx, ny, nz, Si_O_distance);
 
     creator.remove_all_atoms();
-//    creator.remove_all_atoms_in_half_system();
-//    creator.cut_system_along_space_diagonal();
 
-    creator.add_tetrahedra();
-//    creator.test_mathildes_function();
+//    creator.make_test_system_with_close_tetrahedra();
+    creator.make_test_system_with_four_types_of_tetrahedra();
 
     if (print_mts0_files) {
         cout << "Saving mts0 files ..." << endl;
