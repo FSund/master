@@ -8,6 +8,15 @@
 
 #include <mts0_io.h>
 
+#define OH_TYPE 0
+#define SI_TYPE 1
+#define A_TYPE 2
+#define H_TYPE 3
+#define O_TYPE 4
+#define NA_TYPE 5
+#define CL_TYPE 6
+#define X_TYPE 7
+
 using namespace std;
 
 int check_files_and_folders(char *argv[]);

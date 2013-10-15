@@ -40,15 +40,19 @@ int main(int args, char *argv[]) {
     vector<double> system_size = mts0_io->get_lx_ly_lz();
     where_on_axis_to_cut = where_on_axis_to_cut*system_size[axis_to_cut_on];
 
-    char axes[] = { 'x', 'y', 'z'}; 
+    char axes[] = {'x', 'y', 'z'};
     cout << "System size   = " << system_size[0] << " " << system_size[1] << " " << system_size[2] << endl;
     cout << "Cutting at " << where_on_axis_to_cut << " on the " << axes[axis_to_cut_on] << "-axis." << endl;
 
     int n_removed_atoms = 0;
+    int n_removed_si = 0;
+    int n_removed_o = 0;
     for (int i = 0; i < mts0_io->positions.size(); i++) {
-        if (mts0_io->positions[i][axis_to_cut_on] > where_on_axis_to_cut) {
-            mts0_io->remove_atom(i);
-            n_removed_atoms++;
+        while (n_removed_o % (2*n_removed_si) != 0) {
+            if (mts0_io->positions[i][axis_to_cut_on] > where_on_axis_to_cut) {
+                mts0_io->remove_atom(i);
+                n_removed_atoms++;
+            }
         }
     }
 
@@ -56,3 +60,5 @@ int main(int args, char *argv[]) {
 
     save_to_xyz_and_mts0(argv, mts0_io);
 }
+
+

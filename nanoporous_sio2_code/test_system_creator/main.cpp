@@ -48,21 +48,25 @@ int main(int args, char *argv[]) {
 
     Creator creator(mts0_directory_in, nx, ny, nz, Si_O_distance);
 
-    creator.remove_all_atoms();
+//    creator.remove_all_atoms();
 
 //    creator.make_test_system_with_close_tetrahedra();
-    creator.make_test_system_with_four_types_of_tetrahedra();
+//    creator.make_test_system_with_four_types_of_tetrahedra();
 
-    if (print_mts0_files) {
-        cout << "Saving mts0 files ..." << endl;
-        creator.mts0_io->save_atoms(mts0_directory_out);
+    for (int i = 0; i < 100; i++) {
+        cout << "random number = " << rand()/double(RAND_MAX) << endl;
     }
 
-    if (print_xyz_file) {
-        cout << "Saving to .xyz-file ..." << endl;
-        creator.mts0_io->write_to_xyz_file(xyz_output_filename);
-        cout << "Done saving to .xyz-file." << endl;
-    }
+//    if (print_mts0_files) {
+//        cout << "Saving mts0 files ..." << endl;
+//        creator.mts0_io->save_atoms(mts0_directory_out);
+//    }
+
+//    if (print_xyz_file) {
+//        cout << "Saving to .xyz-file ..." << endl;
+//        creator.mts0_io->write_to_xyz_file(xyz_output_filename);
+//        cout << "Done saving to .xyz-file." << endl;
+//    }
 
     return 0;
 }

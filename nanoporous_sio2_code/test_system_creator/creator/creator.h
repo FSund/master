@@ -6,7 +6,7 @@
 #include <vector>
 #include "../mts0_io/mts0_io.h"
 // #include <time.h>
-#include <cstdlib> // srand, rand
+#include <cstdlib> // srand, rand, RAND_MAX
 #include <cmath> // floor, cos, sin
 
 using namespace std;
@@ -18,16 +18,9 @@ using namespace std;
 #define NA_TYPE 5
 #define CL_TYPE 6
 #define X_TYPE 7
-// // Masses in amu
-// #define SI_MASS 28.0855
-// #define NA_MASS 22.989769
-// #define CL_MASS 35.453
-// #define O_MASS 15.9994
-// #define H_MASS 1.00794
 
 // char *type[] = {(char*)"Not in use", (char*)"Si",(char*)"A ",(char*)"H ",(char*)"O ",(char*)"Na",(char*)"Cl",(char*)"X "};
 
-//const double SI_O_DISTANCE = 1.8;
 const double PI = atan(1.0)*4.0;
 const double TETRAHEDRAL_ANGLE_RAD = 109.4712*PI/180.0;
 
