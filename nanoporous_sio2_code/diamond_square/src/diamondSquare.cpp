@@ -26,8 +26,7 @@ mat DiamondSquare::generate(const double H, const double corners)
         R(0,systemLength)            = randu<double>() - 0.5;
         R(systemLength,0)            = randu<double>() - 0.5;
         R(systemLength,systemLength) = randu<double>() - 0.5;
-    }
-    else {
+    } else {
         R(0,0)                       = corners;
         R(0,systemLength)            = corners;
         R(systemLength,0)            = corners;
@@ -44,7 +43,7 @@ mat DiamondSquare::generate(const double H, const double corners)
     uint stepLength = systemLength;
     uint halfStepLength = stepLength/2;
 
-    cout << "systemLength = " << systemLength << endl;
+//    cout << "systemLength = " << systemLength << endl;
 
     for (uint i = 0; i < power2; i++) {
         nSteps = systemLength/stepLength;
