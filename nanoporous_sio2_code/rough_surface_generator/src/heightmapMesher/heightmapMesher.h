@@ -13,6 +13,10 @@ using namespace arma;
 
 class HeightmapMesher{
 public:
+/*!
+    See http://www.ics.uci.edu/~eppstein/projects/tetra/
+    for a visualization of the tetrahedrons the mesher uses to mesh the heightmap
+*/
     void mesh(const mat &heightMap, string filename);
 
 private:

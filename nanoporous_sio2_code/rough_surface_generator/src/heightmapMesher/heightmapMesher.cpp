@@ -10,7 +10,7 @@ void HeightmapMesher::mesh(const mat &heightmap, string filename) {
     nTerrainNodes = heightmap.n_elem;
     gridSize = heightmap.n_rows;
 
-    cout << "nTerrainNodes = " << nTerrainNodes << endl;
+//    cout << "nTerrainNodes = " << nTerrainNodes << endl;
 
     vector<vector<uint> > tetrahedrons; // TODO: figure out how big this will be beforehand (should be easy), possibly convert to umat?
 
@@ -163,4 +163,3 @@ void HeightmapMesher::printToMsh(const mat& heightmap, const vector<vector<uint>
 
     ofile.close();
 }
-

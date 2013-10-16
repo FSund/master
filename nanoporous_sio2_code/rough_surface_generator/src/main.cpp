@@ -7,26 +7,29 @@
 using namespace std;
 using namespace arma;
 
-void parseArgs(int nArgs, const char* argv[], int &power2, double &H, double &corners, bool &PBC, long &idum, int &RNG);
+void parseArgs(int nArgs, const char* argv[], int &power2, string &filename, double &H, double &corners, bool &PBC, long &idum, int &RNG);
 
 int main(int nArgs, const char *argv[])
 {
     int power2;
+    string filename;
     double H;
     double corners;
     bool PBC;
     long idum;
     int RNG;
 
-    parseArgs(nArgs, argv, power2, H, corners, PBC, idum, RNG);
+    parseArgs(nArgs, argv, power2, filename, H, corners, PBC, idum, RNG);
 
     cout << "--- Diamond-square settings --------------------" << endl;
     cout << "power2 = " << power2  << endl;
+    cout << "filename = " << filename << endl;
     cout << "H = " << H << endl;
     cout << "corners = " << corners << endl;
     cout << "PBC = " << std::boolalpha << PBC << std::noboolalpha << endl;
     cout << "idum = " << idum << endl;
     cout << "RNG = " << RNG << endl;
+    cout << "total number of points in grid = " << pow(pow(2, power2)+1, 2) << endl;
     cout << "------------------------------------------------" << endl;
 
     srand(idum); // setting the seed of the RNG for both C++'s rand()/srand() and Armadillo's randu()/randn()
@@ -37,7 +40,6 @@ int main(int nArgs, const char *argv[])
 //    cout << "R = " << endl << R << endl;
 
     HeightmapMesher mesher;
-    string filename = "test";
 
     mesher.mesh(R, filename);
 
@@ -60,101 +62,70 @@ void parseArgs(
         int nArgs,
         const char *argv[],
         int &power2,
+        string &filename,
         double &H,
         double &corners,
         bool &PBC,
         long &idum,
         int &RNG) {
 
-    if (nArgs == 2) {
-        power2  = atoi(argv[1]);
-        H       = 0.8;
-        corners = 0.5;
-        PBC     = 1;
-        idum    = 1;
-        RNG     = 1;
+    double default_H = 0.8;
+    double default_corners = 0.5;
+    bool default_PBC = true;
+    long default_idum = 1;
+    int default_RNG = 1;
 
-//        cout << "Using default values" << endl;
-//        cout << "H       = " << H << endl;
-//        cout << "corners = " << corners << endl;
-//        cout << "PBC     = " << PBC << endl;
-//        cout << "idum    = " << idum << endl;
-//        cout << "RNG     = " << RNG << endl;
-//        cout << endl;
-    } else if (nArgs == 3) {
-        power2  = atoi(argv[1]);
-        H       = atof(argv[2]);
-        corners = 0.5;
-        PBC     = 1;
-        idum    = 1;
-        RNG     = 1;
-
-//        cout << "Using default values" << endl;
-//        cout << "corners = " << corners << endl;
-//        cout << "PBC     = " << PBC << endl;
-//        cout << "idum    = " << idum << endl;
-//        cout << "RNG     = " << RNG << endl;
-//        cout << endl;
+    if (nArgs == 3) {
+        power2   = atoi(argv[1]);
+        filename = argv[2];
+        H        = default_H;
+        corners  = default_corners;
+        PBC      = default_PBC;
+        idum     = default_idum;
+        RNG      = default_RNG;
     } else if (nArgs == 4) {
-        power2  = atoi(argv[1]);
-        H       = atof(argv[2]);
-        corners = atof(argv[3]);
-        PBC     = 1;
-        idum    = 1;
-        RNG     = 1;
-
-//        cout << "Using default values" << endl;
-//        cout << "PBC  = " << PBC << endl;
-//        cout << "idum = " << idum << endl;
-//        cout << "RNG  = " << RNG << endl;
-//        cout << endl;
+        power2   = atoi(argv[1]);
+        filename = argv[2];
+        H        = atof(argv[3]);
+        corners  = default_corners;
+        PBC      = default_PBC;
+        idum     = default_idum;
+        RNG      = default_RNG;
     } else if (nArgs == 5) {
-        power2  = atoi(argv[1]);
-        H       = atof(argv[2]);
-        corners = atof(argv[3]);
-        PBC     = atoi(argv[4]);
-        idum    = 1;
-        RNG     = 1;
-
-//        cout << "Using default values" << endl;
-//        cout << "idum = " << idum << endl;
-//        cout << "RNG  = " << RNG << endl;
-//        cout << endl;
+        power2   = atoi(argv[1]);
+        filename = argv[2];
+        H        = atof(argv[3]);
+        corners  = atof(argv[4]);
+        PBC      = default_PBC;
+        idum     = default_idum;
+        RNG      = default_RNG;
     } else if (nArgs == 6) {
-        power2  = atoi(argv[1]);
-        H       = atof(argv[2]);
-        corners = atof(argv[3]);
-        PBC     = atoi(argv[4]);
-        idum    = atol(argv[5]);
-        RNG     = 1;
-
-//        cout << "Using default values" << endl;
-//        cout << "RNG  = " << RNG << endl;
+        power2   = atoi(argv[1]);
+        filename = argv[2];
+        H        = atof(argv[3]);
+        corners  = atof(argv[4]);
+        PBC      = atoi(argv[5]);
+        idum     = default_idum;
+        RNG      = default_RNG;
     } else if (nArgs == 7) {
-        power2  = atoi(argv[1]);
-        H       = atof(argv[2]);
-        corners = atof(argv[3]);
-        PBC     = atoi(argv[4]);
-        idum    = atol(argv[5]);
-        RNG     = atoi(argv[6]);
+        power2   = atoi(argv[1]);
+        filename = argv[2];
+        H        = atof(argv[3]);
+        corners  = atof(argv[4]);
+        PBC      = atoi(argv[5]);
+        idum     = atol(argv[6]);
+        RNG      = default_RNG;
+    } else if (nArgs == 8) {
+        power2   = atoi(argv[1]);
+        filename = argv[2];
+        H        = atof(argv[3]);
+        corners  = atof(argv[4]);
+        PBC      = atoi(argv[5]);
+        idum     = atol(argv[6]);
+        RNG      = atoi(argv[7]);
     } else {
-//        power2  = 3;
-//        H       = 0.8;
-//        corners = 0.5;
-//        PBC     = 1;
-//        idum    = 1;
-//        RNG     = 1;
-
-        cout << "Usage: ./diamondSquare  power2  optional:(H  corners  PBC[0|1]  idum[unsigned int]  RNG[0|1|2])" << endl;
+        cout << "Usage: ./diamondSquare  power2  filename  optional:(H  corners  PBC[0|1]  idum[unsigned int]  RNG[0|1|2])" << endl;
         exit(1);
-//        cout << "Using default values" << endl;
-//        cout << "power2  = " << power2 << endl;
-//        cout << "H       = " << H << endl;
-//        cout << "corners = " << corners << endl;
-//        cout << "PBC     = " << PBC << endl;
-//        cout << "idum    = " << idum << endl;
-//        cout << "RNG     = " << RNG << endl;
-//        cout << endl;
     }
 }
 
