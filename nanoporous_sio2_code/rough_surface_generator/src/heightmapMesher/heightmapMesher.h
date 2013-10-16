@@ -22,7 +22,7 @@ private:
     vector<uint> makeLeftEdgeTetrahedron(uint tetrahedronType, uint x, uint y, uint gridSize, uint nTerrainNodes);
     vector<uint> makeBottomEdgeTetrahedron(uint tetrahedronType, uint x, uint y, uint gridSize, uint nTerrainNodes);
 
-    void printToEleNode(const mat& heightmap, const vector<vector<uint> >& tetrahedrons, string filename);
+//    void printToEleNode(const mat& heightmap, const vector<vector<uint> >& tetrahedrons, string filename);
     void printToMsh(const mat& heightmap, const vector<vector<uint> >& tetrahedrons, string filename);
 };
 

@@ -15,25 +15,25 @@ void HeightmapMesher::mesh(const mat &heightmap, string filename) {
     vector<vector<uint> > tetrahedrons; // TODO: figure out how big this will be beforehand (should be easy), possibly convert to umat?
 
     // loop over inner points (not including the column at the left and right edge, and the two rows at the bottom edge)
-    int a = 0;
+//    int a = 0;
     for (uint x = 0; x < gridSize-2; x++) { // not including the two bottom rows
         for (uint y = 1; y < gridSize-1; y++) { // not including first and last column
-            cout << "default" << endl;
+//            cout << "default" << endl;
             for (uint tetrahedronType = 0; tetrahedronType < 6; tetrahedronType++) {
                 tetrahedrons.push_back(makeTetrahedron(tetrahedronType, x, y, gridSize, nTerrainNodes));
-                a++;
-                cout << "a = " << a << ", x = " << x << ", y = " << y
-                     << ", tetrahedron = " << tetrahedrons.back()[0] << "," << tetrahedrons.back()[1] << "," << tetrahedrons.back()[2] << "," << tetrahedrons.back()[3] << endl;
+//                a++;
+//                cout << "a = " << a << ", x = " << x << ", y = " << y
+//                     << ", tetrahedron = " << tetrahedrons.back()[0] << "," << tetrahedrons.back()[1] << "," << tetrahedrons.back()[2] << "," << tetrahedrons.back()[3] << endl;
             }
         }
     }
-    cout << "n tetrahedrons made = " << a << endl;
+//    cout << "n tetrahedrons made = " << a << endl;
 
     // loop over left edge (not including endpoint (0,gridSize-1) or (0,gridSize-2))
     uint x;
     uint y = 0; // left edge
     for (x = 0; x < gridSize-2; x++) { // not including the two last points
-        cout << "left edge" << endl;
+//        cout << "left edge" << endl;
         for (uint tetrahedronType = 0; tetrahedronType < 2; tetrahedronType++) {
             tetrahedrons.push_back(makeLeftEdgeTetrahedron(tetrahedronType, x, y, gridSize, nTerrainNodes));
         }
@@ -47,7 +47,7 @@ void HeightmapMesher::mesh(const mat &heightmap, string filename) {
     // loop over bottom edge (not including the startpoint (gridSize-1, 0) and the endpoint (gridSize-1,gridSize-1))
     x = gridSize-1; // bottom edge
     for (y = 1; y < gridSize-1; y++) { // not including the start and endpoints
-        cout << "bottom edge" << endl;
+//        cout << "bottom edge" << endl;
         for (uint tetrahedronType = 0; tetrahedronType < 2; tetrahedronType++) {
             tetrahedrons.push_back(makeBottomEdgeTetrahedron(tetrahedronType, x, y, gridSize, nTerrainNodes));
         }
@@ -58,7 +58,7 @@ void HeightmapMesher::mesh(const mat &heightmap, string filename) {
     tetrahedronType = 0;
     tetrahedrons.push_back(makeBottomEdgeTetrahedron(tetrahedronType, x, y, gridSize, nTerrainNodes));
 
-    printToEleNode(heightmap, tetrahedrons, filename);
+//    printToEleNode(heightmap, tetrahedrons, filename);
     printToMsh(heightmap, tetrahedrons, filename);
 }
 
@@ -200,55 +200,55 @@ vector<uint> HeightmapMesher::makeBottomEdgeTetrahedron(uint tetrahedronType, ui
     }
 }
 
-void HeightmapMesher::printToEleNode(const mat &heightmap, const vector<vector<uint> > &tetrahedrons, string filename) {
-    // Print nodes (points) to file
-    stringstream filenameMaker;
-    filenameMaker << filename << ".node";
+//void HeightmapMesher::printToEleNode(const mat &heightmap, const vector<vector<uint> > &tetrahedrons, string filename) {
+//    // Print nodes (points) to file
+//    stringstream filenameMaker;
+//    filenameMaker << filename << ".node";
 
-    ofstream ofile;
-    ofile.open(filenameMaker.str().c_str());
-    ofile << nTerrainNodes*2 << " 3 0 0" << endl;
-    uint counter = 1; // counting starts at 1 in .node and .ele files
-    double norm = 1.0/gridSize;
+//    ofstream ofile;
+//    ofile.open(filenameMaker.str().c_str());
+//    ofile << nTerrainNodes*2 << " 3 0 0" << endl;
+//    uint counter = 1; // counting starts at 1 in .node and .ele files
+//    double norm = 1.0/gridSize;
 
-    // Printing the heightmap to file
-    for (uint i = 0; i < gridSize; i++) {
-        double x = i*norm;
-        for (uint j = 0; j < gridSize; j++) {
-            double y = j*norm;
-            double z = heightmap(i,j);
-            ofile << counter << " " << x << " " << y << " " << z << endl;
-            counter++;
-        }
-    }
+//    // Printing the heightmap to file
+//    for (uint i = 0; i < gridSize; i++) {
+//        double x = i*norm;
+//        for (uint j = 0; j < gridSize; j++) {
+//            double y = j*norm;
+//            double z = heightmap(i,j);
+//            ofile << counter << " " << x << " " << y << " " << z << endl;
+//            counter++;
+//        }
+//    }
 
-    // Printing the zero grid to file
-    for (uint i = 0; i < gridSize; i++) {
-        double x = i*norm;
-        for (uint j = 0; j < gridSize; j++) {
-            double y = j*norm;
-            double z = 0.0;
-            ofile << counter << " " << x << " " << y << " " << z << endl;
-            counter++;
-        }
-    }
-    ofile.close();
+//    // Printing the zero grid to file
+//    for (uint i = 0; i < gridSize; i++) {
+//        double x = i*norm;
+//        for (uint j = 0; j < gridSize; j++) {
+//            double y = j*norm;
+//            double z = 0.0;
+//            ofile << counter << " " << x << " " << y << " " << z << endl;
+//            counter++;
+//        }
+//    }
+//    ofile.close();
 
-    filenameMaker.str(""); // clear the string stream
-    filenameMaker << filename << ".ele";
+//    filenameMaker.str(""); // clear the string stream
+//    filenameMaker << filename << ".ele";
 
-    ofile.open(filenameMaker.str().c_str());
-    ofile << tetrahedrons.size() << " 4 0" << endl;
-    counter = 1;
-    for (vector<vector<uint> >::const_iterator elements = tetrahedrons.begin(); elements != tetrahedrons.end(); ++elements) {
-        ofile << counter << " ";
-        for (vector<uint>::const_iterator element = elements->begin(); element != elements->end(); ++element) {
-            ofile << (*element) + 1 << " "; // counting starts at 1 in .node and .ele files
-        }
-        ofile << endl;
-        counter++;
-    }
-}
+//    ofile.open(filenameMaker.str().c_str());
+//    ofile << tetrahedrons.size() << " 4 0" << endl;
+//    counter = 1;
+//    for (vector<vector<uint> >::const_iterator elements = tetrahedrons.begin(); elements != tetrahedrons.end(); ++elements) {
+//        ofile << counter << " ";
+//        for (vector<uint>::const_iterator element = elements->begin(); element != elements->end(); ++element) {
+//            ofile << (*element) + 1 << " "; // counting starts at 1 in .node and .ele files
+//        }
+//        ofile << endl;
+//        counter++;
+//    }
+//}
 
 void HeightmapMesher::printToMsh(const mat& heightmap, const vector<vector<uint> >& tetrahedrons, string filename) {
 
@@ -279,9 +279,19 @@ void HeightmapMesher::printToMsh(const mat& heightmap, const vector<vector<uint>
     uint counter = 1; // counting starts at 1 in .msh files
     // Printing the heightmap to file
     for (uint i = 0; i < gridSize; i++) {
-        double x = i*norm;
+        double x;
+        // moving the edge points of the heighmap 0.5 cells closer to the center, so the heightmap and the zero height grid have the same size
+        if (i == 0) x = (i+0.5)*norm;
+        else if (i == gridSize-1) x = (i-0.5)*norm;
+        else x = i*norm;
+
         for (uint j = 0; j < gridSize; j++) {
-            double y = j*norm;
+            double y;
+            // moving the edge points of the heighmap 0.5 cells closer to the center, so the heightmap and the zero height grid have the same size
+            if (j == 0) y = (j+0.5)*norm;
+            else if (j == gridSize-1) y = (j-0.5)*norm;
+            else y = j*norm;
+
             double z = heightmap(i,j);
             ofile << counter << " " << x << " " << y << " " << z << endl;
             counter++;

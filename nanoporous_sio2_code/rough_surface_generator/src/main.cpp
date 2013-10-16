@@ -34,7 +34,7 @@ int main(int nArgs, const char *argv[])
     DiamondSquare generator(power2, idum, RNG, PBC);
     mat R = generator.generate(H, corners);
 
-    cout << "R = " << endl << R << endl;
+//    cout << "R = " << endl << R << endl;
 
     HeightmapMesher mesher;
     string filename = "test";

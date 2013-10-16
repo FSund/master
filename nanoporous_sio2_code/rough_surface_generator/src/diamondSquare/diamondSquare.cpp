@@ -62,7 +62,7 @@ mat DiamondSquare::generate(const double H, const double corners)
             square(x[j], y[j], stepLength, halfStepLength, randrange, R);
         }
 
-        cout << endl << "R after squares" << endl << R << endl;
+//        cout << endl << "R after squares" << endl << R << endl;
 
         /* diamonds */
         if (PBC) {
@@ -75,7 +75,7 @@ mat DiamondSquare::generate(const double H, const double corners)
             }
         }
 
-        cout << endl << "R after diamonds" << endl << R << endl;
+//        cout << endl << "R after diamonds" << endl << R << endl;
 
         if (PBC) {
             uint idx;
@@ -107,7 +107,7 @@ mat DiamondSquare::generate(const double H, const double corners)
 //            cout << endl << "R after right" << endl << R << endl;
         }
 
-        cout << endl << "R after righ/bottom" << endl << R << endl;
+//        cout << endl << "R after righ/bottom" << endl << R << endl;
 
         stepLength /= 2;
         halfStepLength /= 2;
