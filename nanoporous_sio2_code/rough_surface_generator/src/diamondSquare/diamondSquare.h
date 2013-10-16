@@ -3,7 +3,7 @@
 
 #include <iostream>
 #include <armadillo>
-#include "lib.h"
+//#include "lib.h"
 
 using namespace std;
 using namespace arma;
@@ -53,15 +53,15 @@ inline double DiamondSquare::random()
         return NAN;
 }
 
-inline double DiamondSquare::gaussianDeviate(long *seed)
-{
-    /* returns normally distributed random number (mean 0, stddev 1) */
-    double R, randomNormal;
-    // Box-Muller transform
-    R = sqrt(-2.0*log(ran2(seed)));
-    randomNormal = R*cos(2.0*pi*ran2(seed));
+//inline double DiamondSquare::gaussianDeviate(long *seed)
+//{
+//    /* returns normally distributed random number (mean 0, stddev 1) */
+//    double R, randomNormal;
+//    // Box-Muller transform
+//    R = sqrt(-2.0*log(ran2(seed)));
+//    randomNormal = R*cos(2.0*pi*ran2(seed));
 
-    return randomNormal;
-}
+//    return randomNormal;
+//}
 
 #endif // DIAMONDSQUARE_H
