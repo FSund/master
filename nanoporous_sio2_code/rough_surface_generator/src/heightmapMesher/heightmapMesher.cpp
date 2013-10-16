@@ -14,49 +14,14 @@ void HeightmapMesher::mesh(const mat &heightmap, string filename) {
 
     vector<vector<uint> > tetrahedrons; // TODO: figure out how big this will be beforehand (should be easy), possibly convert to umat?
 
-    // loop over inner points (not including the column at the left and right edge, and the two rows at the bottom edge)
-//    int a = 0;
-    for (uint x = 0; x < gridSize-2; x++) { // not including the two bottom rows
-        for (uint y = 1; y < gridSize-1; y++) { // not including first and last column
-//            cout << "default" << endl;
-            for (uint tetrahedronType = 0; tetrahedronType < 6; tetrahedronType++) {
+    // loop over all all points except right and bottom edge
+    for (uint x = 0; x < gridSize-1; x++) { // not including the bottom edge
+        for (uint y = 0; y < gridSize-1; y++) { // not including right edge
+            for (uint tetrahedronType = 0; tetrahedronType < 5; tetrahedronType++) {
                 tetrahedrons.push_back(makeTetrahedron(tetrahedronType, x, y, gridSize, nTerrainNodes));
-//                a++;
-//                cout << "a = " << a << ", x = " << x << ", y = " << y
-//                     << ", tetrahedron = " << tetrahedrons.back()[0] << "," << tetrahedrons.back()[1] << "," << tetrahedrons.back()[2] << "," << tetrahedrons.back()[3] << endl;
             }
         }
     }
-//    cout << "n tetrahedrons made = " << a << endl;
-
-    // loop over left edge (not including endpoint (0,gridSize-1) or (0,gridSize-2))
-    uint x;
-    uint y = 0; // left edge
-    for (x = 0; x < gridSize-2; x++) { // not including the two last points
-//        cout << "left edge" << endl;
-        for (uint tetrahedronType = 0; tetrahedronType < 2; tetrahedronType++) {
-            tetrahedrons.push_back(makeLeftEdgeTetrahedron(tetrahedronType, x, y, gridSize, nTerrainNodes));
-        }
-    }
-    // manual irregular tetrahedron with (gridSize-1, 0) at top left corner of triangle
-    x = gridSize-2; // next to the last point
-    y = 0;
-    uint tetrahedronType = 0;
-    tetrahedrons.push_back(makeLeftEdgeTetrahedron(tetrahedronType, x, y, gridSize, nTerrainNodes));
-
-    // loop over bottom edge (not including the startpoint (gridSize-1, 0) and the endpoint (gridSize-1,gridSize-1))
-    x = gridSize-1; // bottom edge
-    for (y = 1; y < gridSize-1; y++) { // not including the start and endpoints
-//        cout << "bottom edge" << endl;
-        for (uint tetrahedronType = 0; tetrahedronType < 2; tetrahedronType++) {
-            tetrahedrons.push_back(makeBottomEdgeTetrahedron(tetrahedronType, x, y, gridSize, nTerrainNodes));
-        }
-    }
-    // manual irregular tetrahedron with (gridSize-1, gridSize-1) at bottom right corner of triangle
-    x = gridSize-1;
-    y = gridSize-1;
-    tetrahedronType = 0;
-    tetrahedrons.push_back(makeBottomEdgeTetrahedron(tetrahedronType, x, y, gridSize, nTerrainNodes));
 
 //    printToEleNode(heightmap, tetrahedrons, filename);
     printToMsh(heightmap, tetrahedrons, filename);
@@ -64,71 +29,60 @@ void HeightmapMesher::mesh(const mat &heightmap, string filename) {
 
 vector<uint> HeightmapMesher::makeTetrahedron(uint tetrahedronType, uint x, uint y, uint gridSize, uint nTerrainNodes) {
 
-    // 6 unique tetrahedra
+    // only need 5 tetrahedra to fill a cube
     switch (tetrahedronType) {
     case 0:
     {
-        // regular tetrahedron in top left corner, with terrain node (x,y) at top and zero height node (x,y-1) at left
+        // regular tetrahedron in the center of the cube, using terrain nodes (x+1,y) and (x,y+1), and zero height nodes (x,y) and (x+1,y+1)
         vector<uint> tetrahedronNodes = {
-            convert_2d_indices_to_linear_index(x,y,gridSize,gridSize),
             convert_2d_indices_to_linear_index(x+1,y,gridSize,gridSize),
-            nTerrainNodes + convert_2d_indices_to_linear_index(x,y-1,gridSize-1,gridSize-1),
-            nTerrainNodes + convert_2d_indices_to_linear_index(x,y,gridSize-1,gridSize-1)
+            convert_2d_indices_to_linear_index(x,y+1,gridSize,gridSize),
+            nTerrainNodes + convert_2d_indices_to_linear_index(x,y,gridSize,gridSize),
+            nTerrainNodes + convert_2d_indices_to_linear_index(x+1,y+1,gridSize,gridSize)
         };
         return tetrahedronNodes;
     }
     case 1:
     {
-        // regular tetrahedron in bottom right corner, with terrain node (x+1,y) at left and zero height node (x,y) at top
+        // irregular tetrahedron on top left corner, with triangle in terrain nodes. Using terrain nodes (x,y), (x+1,y) and (x,y+1), and zero heigh node (x,y)
         vector<uint> tetrahedronNodes = {
+            convert_2d_indices_to_linear_index(x,y,gridSize,gridSize),
             convert_2d_indices_to_linear_index(x+1,y,gridSize,gridSize),
-            convert_2d_indices_to_linear_index(x+1,y+1,gridSize,gridSize),
-            nTerrainNodes + convert_2d_indices_to_linear_index(x,y,gridSize-1,gridSize-1),
-            nTerrainNodes + convert_2d_indices_to_linear_index(x+1,y,gridSize-1,gridSize-1)
+            convert_2d_indices_to_linear_index(x,y+1,gridSize,gridSize),
+            nTerrainNodes + convert_2d_indices_to_linear_index(x,y,gridSize,gridSize)
         };
         return tetrahedronNodes;
     }
     case 2:
     {
-        // irregular tetrahedron with three points in the zero height grid, in bottom left corner, with zero heigh node (x,y-1) in top left corner of the triangle in the zero height grid
+        // irregular tetrahedron on bottom left corner, with triangle in zero height nodes. Using terrain node (x+1,y), and zero heigh nodes (x+1,y), (x,y), and (x+1,y+1)
         vector<uint> tetrahedronNodes = {
-            nTerrainNodes + convert_2d_indices_to_linear_index(x,y-1,gridSize-1,gridSize-1),
-            nTerrainNodes + convert_2d_indices_to_linear_index(x,y,gridSize-1,gridSize-1),
-            nTerrainNodes + convert_2d_indices_to_linear_index(x+1,y-1,gridSize-1,gridSize-1),
-            convert_2d_indices_to_linear_index(x+1,y,gridSize,gridSize)
+            convert_2d_indices_to_linear_index(x+1,y,gridSize,gridSize),
+            nTerrainNodes + convert_2d_indices_to_linear_index(x+1,y,gridSize,gridSize),
+            nTerrainNodes + convert_2d_indices_to_linear_index(x,y,gridSize,gridSize),
+            nTerrainNodes + convert_2d_indices_to_linear_index(x+1,y+1,gridSize,gridSize)
         };
         return tetrahedronNodes;
     }
     case 3:
     {
-        // irregular tetrahedron with three points in the zero height grid, in bottom left corner, with zero height node (x+1,y) in bottom right corner of the triangle in the zero height grid
+        // irregular tetrahedron on bottom right corner, with triangle in terrain nodes. Using terrain nodes (x+1,y+1), (x+1,y) and (x,y+1), and zero heigh node (x+1,y+1)
         vector<uint> tetrahedronNodes = {
-            nTerrainNodes + convert_2d_indices_to_linear_index(x+1,y,gridSize-1,gridSize-1),
-            nTerrainNodes + convert_2d_indices_to_linear_index(x,y,gridSize-1,gridSize-1),
-            nTerrainNodes + convert_2d_indices_to_linear_index(x+1,y-1,gridSize-1,gridSize-1),
-            convert_2d_indices_to_linear_index(x+1,y,gridSize,gridSize)
+            convert_2d_indices_to_linear_index(x+1,y+1,gridSize,gridSize),
+            convert_2d_indices_to_linear_index(x+1,y,gridSize,gridSize),
+            convert_2d_indices_to_linear_index(x,y+1,gridSize,gridSize),
+            nTerrainNodes + convert_2d_indices_to_linear_index(x+1,y+1,gridSize,gridSize)
         };
         return tetrahedronNodes;
     }
     case 4:
     {
-        // irregular tetrahedron with three points in the terrain, in top right corner, with terrain node (x+1,y) in bottom left corner of the triangle in the terrain nodes
-        vector<uint> tetrahedronNodes = {
-            convert_2d_indices_to_linear_index(x+1,y,gridSize,gridSize),
-            convert_2d_indices_to_linear_index(x,y,gridSize,gridSize),
-            convert_2d_indices_to_linear_index(x+1,y+1,gridSize,gridSize),
-            nTerrainNodes + convert_2d_indices_to_linear_index(x,y,gridSize-1,gridSize-1)
-        };
-        return tetrahedronNodes;
-    }
-    case 5:
-    {
-        // irregular tetrahedron with three points in the terrain, in top right corner, with terrain node (x,y+1) in top right corner of the triangle in the terrain nodes
+        // irregular tetrahedron on top right corner, with triangle in zero height nodes. Using terrain node (x,y+1), and zero heigh nodes (x,y+1), (x,y), and (x+1,y+1)
         vector<uint> tetrahedronNodes = {
             convert_2d_indices_to_linear_index(x,y+1,gridSize,gridSize),
-            convert_2d_indices_to_linear_index(x,y,gridSize,gridSize),
-            convert_2d_indices_to_linear_index(x+1,y+1,gridSize,gridSize),
-            nTerrainNodes + convert_2d_indices_to_linear_index(x,y,gridSize-1,gridSize-1)
+            nTerrainNodes + convert_2d_indices_to_linear_index(x,y+1,gridSize,gridSize),
+            nTerrainNodes + convert_2d_indices_to_linear_index(x,y,gridSize,gridSize),
+            nTerrainNodes + convert_2d_indices_to_linear_index(x+1,y+1,gridSize,gridSize)
         };
         return tetrahedronNodes;
     }
@@ -138,121 +92,9 @@ vector<uint> HeightmapMesher::makeTetrahedron(uint tetrahedronType, uint x, uint
     }
 }
 
-vector<uint> HeightmapMesher::makeLeftEdgeTetrahedron(uint tetrahedronType, uint x, uint y, uint gridSize, uint nTerrainNodes) {
-    // for left edge //
-    switch (tetrahedronType) {
-    case 0:
-    {
-        // irregular tetrahedron using terrain node x,y as top left corner of triangle
-        vector<uint> tetrahedronNodes = {
-            convert_2d_indices_to_linear_index(x,y,gridSize,gridSize),
-            convert_2d_indices_to_linear_index(x+1,y,gridSize,gridSize),
-            convert_2d_indices_to_linear_index(x,y+1,gridSize,gridSize),
-            nTerrainNodes + convert_2d_indices_to_linear_index(x,y,gridSize-1,gridSize-1)
-        };
-        return tetrahedronNodes;
-    }
-    case 1:
-    {
-        // regular tetrahedron with terrain node (x+1,y) at left and zero node (x,y) at top
-        vector<uint> tetrahedronNodes = {
-            convert_2d_indices_to_linear_index(x+1,y,gridSize,gridSize),
-            convert_2d_indices_to_linear_index(x+1,y+1,gridSize,gridSize),
-            nTerrainNodes + convert_2d_indices_to_linear_index(x,y,gridSize-1,gridSize-1),
-            nTerrainNodes + convert_2d_indices_to_linear_index(x+1,y,gridSize-1,gridSize-1)
-        };
-        return tetrahedronNodes;
-    }
-    default:
-        cout << "Error in HeightmapMesher::makeLeftEdgeTetrahedron" << endl;
-        exit(1);
-    }
-}
-
-vector<uint> HeightmapMesher::makeBottomEdgeTetrahedron(uint tetrahedronType, uint x, uint y, uint gridSize, uint nTerrainNodes) {
-    // for bottom edge //
-    switch (tetrahedronType) {
-    case 0:
-    {
-        // irregular tetrahedron using x,y as bottom right corner of triangle
-        vector<uint> tetrahedronNodes = {
-            convert_2d_indices_to_linear_index(x,y,gridSize,gridSize),
-            convert_2d_indices_to_linear_index(x,y-1,gridSize,gridSize),
-            convert_2d_indices_to_linear_index(x-1,y,gridSize,gridSize),
-            nTerrainNodes + convert_2d_indices_to_linear_index(x-1,y-1,gridSize-1,gridSize-1)
-        };
-        return tetrahedronNodes;
-    }
-    case 1:
-    {
-        // regular tetrahedron with terrain node (x,y) at bottom and zero node (x,y) at the left
-        vector<uint> tetrahedronNodes = {
-            convert_2d_indices_to_linear_index(x,y,gridSize,gridSize),
-            convert_2d_indices_to_linear_index(x-1,y,gridSize,gridSize),
-            nTerrainNodes + convert_2d_indices_to_linear_index(x-1,y-1,gridSize-1,gridSize-1),
-            nTerrainNodes + convert_2d_indices_to_linear_index(x-1,y,gridSize-1,gridSize-1)
-        };
-        return tetrahedronNodes;
-    }
-    default:
-        cout << "Error in HeightmapMesher::makeBottomEdgeTetrahedron" << endl;
-        exit(1);
-    }
-}
-
-//void HeightmapMesher::printToEleNode(const mat &heightmap, const vector<vector<uint> > &tetrahedrons, string filename) {
-//    // Print nodes (points) to file
-//    stringstream filenameMaker;
-//    filenameMaker << filename << ".node";
-
-//    ofstream ofile;
-//    ofile.open(filenameMaker.str().c_str());
-//    ofile << nTerrainNodes*2 << " 3 0 0" << endl;
-//    uint counter = 1; // counting starts at 1 in .node and .ele files
-//    double norm = 1.0/gridSize;
-
-//    // Printing the heightmap to file
-//    for (uint i = 0; i < gridSize; i++) {
-//        double x = i*norm;
-//        for (uint j = 0; j < gridSize; j++) {
-//            double y = j*norm;
-//            double z = heightmap(i,j);
-//            ofile << counter << " " << x << " " << y << " " << z << endl;
-//            counter++;
-//        }
-//    }
-
-//    // Printing the zero grid to file
-//    for (uint i = 0; i < gridSize; i++) {
-//        double x = i*norm;
-//        for (uint j = 0; j < gridSize; j++) {
-//            double y = j*norm;
-//            double z = 0.0;
-//            ofile << counter << " " << x << " " << y << " " << z << endl;
-//            counter++;
-//        }
-//    }
-//    ofile.close();
-
-//    filenameMaker.str(""); // clear the string stream
-//    filenameMaker << filename << ".ele";
-
-//    ofile.open(filenameMaker.str().c_str());
-//    ofile << tetrahedrons.size() << " 4 0" << endl;
-//    counter = 1;
-//    for (vector<vector<uint> >::const_iterator elements = tetrahedrons.begin(); elements != tetrahedrons.end(); ++elements) {
-//        ofile << counter << " ";
-//        for (vector<uint>::const_iterator element = elements->begin(); element != elements->end(); ++element) {
-//            ofile << (*element) + 1 << " "; // counting starts at 1 in .node and .ele files
-//        }
-//        ofile << endl;
-//        counter++;
-//    }
-//}
-
 void HeightmapMesher::printToMsh(const mat& heightmap, const vector<vector<uint> >& tetrahedrons, string filename) {
 
-    uint nNodes = nTerrainNodes + (gridSize-1)*(gridSize-1);
+    uint nNodes = 2*nTerrainNodes;
 
     stringstream filenameMaker;
     filenameMaker << filename << ".msh";
@@ -279,29 +121,19 @@ void HeightmapMesher::printToMsh(const mat& heightmap, const vector<vector<uint>
     uint counter = 1; // counting starts at 1 in .msh files
     // Printing the heightmap to file
     for (uint i = 0; i < gridSize; i++) {
-        double x;
-        // moving the edge points of the heighmap 0.5 cells closer to the center, so the heightmap and the zero height grid have the same size
-        if (i == 0) x = (i+0.5)*norm;
-        else if (i == gridSize-1) x = (i-0.5)*norm;
-        else x = i*norm;
-
+        double x = i*norm;
         for (uint j = 0; j < gridSize; j++) {
-            double y;
-            // moving the edge points of the heighmap 0.5 cells closer to the center, so the heightmap and the zero height grid have the same size
-            if (j == 0) y = (j+0.5)*norm;
-            else if (j == gridSize-1) y = (j-0.5)*norm;
-            else y = j*norm;
-
+            double y = j*norm;
             double z = heightmap(i,j);
             ofile << counter << " " << x << " " << y << " " << z << endl;
             counter++;
         }
     }
-    // Printing the zero grid to file
-    for (uint i = 0; i < gridSize-1; i++) {
-        double x = (i + 0.5)*norm;
-        for (uint j = 0; j < gridSize-1; j++) {
-            double y = (j + 0.5)*norm;
+    // Printing the zero height grid to file
+    for (uint i = 0; i < gridSize; i++) {
+        double x = i*norm;
+        for (uint j = 0; j < gridSize; j++) {
+            double y = j*norm;
             double z = 0.0;
             ofile << counter << " " << x << " " << y << " " << z << endl;
             counter++;
