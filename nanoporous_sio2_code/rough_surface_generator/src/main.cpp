@@ -33,17 +33,14 @@ int main(int nArgs, const char *argv[]) {
     cout << "total number of points in grid = " << pow(pow(2, power2)+1, 2) << endl;
     cout << "------------------------------------------------" << endl;
 
-    srand(idum); // setting the seed of the RNG for both C++'s rand()/srand() and Armadillo's randu()/randn()
+    DiamondSquare generator;
+    mat R = generator.generate(power2, H, minZValue, maxZValue, PBC, idum, RNG);
 
-    DiamondSquare generator(power2, idum, RNG, PBC);
-    mat R = generator.generate(H, minZValue, maxZValue);
-
-//    cout << "R = " << endl << R << endl;
+//    cout << "R from generator = " << endl << R << endl;
+//    R.save("rmat.dat", raw_ascii);
 
     HeightmapMesher mesher;
     mesher.mesh(R, filename);
-
-//    R.save("rmat.dat", raw_ascii);
 
     return 0;
 }

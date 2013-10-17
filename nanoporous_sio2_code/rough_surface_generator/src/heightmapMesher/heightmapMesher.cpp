@@ -129,7 +129,8 @@ void HeightmapMesher::printToMsh(const mat& heightmap, const vector<vector<uint>
         double x = i*gridNorm;
         for (uint j = 0; j < gridSize; j++) {
             double y = j*gridNorm;
-            double z = (heightmap(i,j) - heightmapMin)*heightmapNorm;
+//            double z = (heightmap(i,j) - heightmapMin)*heightmapNorm; // Scaling the heightmap so it's in the range [0,1]
+            double z = heightmap(i,j);
             ofile << counter << " " << x << " " << y << " " << z << endl;
             counter++;
         }

@@ -1,25 +1,21 @@
 #include <src/diamondSquare/diamondSquare.h>
 
-DiamondSquare::DiamondSquare(const int power2, long idum, const int RNG, const bool PBC):
-    power2(power2),
-    systemSize(pow(2.0, power2) + 1),
-    idum(idum),
-    R(zeros<mat>(systemSize,systemSize)),
-    RNG(RNG),
-    PBC(PBC) {
-    if (RNG > 2) {
-        cout << "RNG too large, have only implemented 3 random number generators" << endl;
-        exit(1);
-    }
-}
+mat &DiamondSquare::generate(
+        const uint power2,
+        const double H,
+        const double minZValue,
+        const double maxZValue,
+        const bool PBC,
+        const long idum,
+        const uint RNG) {
+    this->power2 = power2;
+    this->PBC = PBC;
+    this->RNG = RNG;
+    srand(idum); // setting the seed of the RNG for both C++'s rand()/srand() and Armadillo's randu()/randn()
+    systemSize = pow(2.0, power2) + 1;
 
-mat DiamondSquare::generate(const double H, const double minZValue, const double maxZValue) {
-
-//    R(0,0)                       = ran2(&idum) - 0.5;
-//    R(0,systemSize-1)            = ran2(&idum) - 0.5;
-//    R(systemSize-1,0)            = ran2(&idum) - 0.5;
-//    R(systemSize-1,systemSize-1) = ran2(&idum) - 0.5;
-    if (PBC) { // need the same value in the corners if we are using periodic boundaries
+    R = zeros<mat>(systemSize, systemSize);
+    if (PBC) { // We need the same value in the corners if we are using periodic boundaries
         R(0,0)                       = randu<double>() - 0.5;
         R(0,systemSize-1)            = R(0,0);
         R(systemSize-1,0)            = R(0,0);
@@ -36,8 +32,15 @@ mat DiamondSquare::generate(const double H, const double minZValue, const double
     if (RNG == 0 && PBC == 0) {
         return R;
     }
-    // normalize to minZ maxZ
-//    for (uint i = 0; i < system)
+
+    // normalize to range [minZ maxZ]
+    double minValue = min(min(R));
+    double normFactor = 1.0/(max(max(R)) - minValue);
+    for (uint i = 0; i < systemSize; i++) {
+        for (uint j = 0; j < systemSize; j++) {
+            R(i,j) = (R(i,j) - minValue)*normFactor*(maxZValue - minZValue) + minZValue;
+        }
+    }
 
     return R;
 }
@@ -185,4 +188,18 @@ void DiamondSquare::rightEdgeDiamonds(const uint x, const uint y, const uint hal
         R(x+halfStepLength, y+halfStepLength) +
         R(x-halfStepLength, y+halfStepLength));
     R(x, y + halfStepLength) = average + random()*RNGstddv;
+}
+
+inline double DiamondSquare::random()
+{
+    // Returns random number with mean 0
+    if (RNG == 0) {
+        return 0.0;
+    } else if (RNG == 1) {
+        return (randu<double>() - 0.5); // uniform distribution in [-0.5,0.5]
+    } else if (RNG == 2) {
+        return randn<double>(); // standard normal distribution (sigma = 1, my = 0)
+    } else {
+        return NAN;
+    }
 }
