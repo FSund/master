@@ -10,21 +10,24 @@ void HeightmapMesher::mesh(const mat &heightmap, string filename) {
     nTerrainNodes = heightmap.n_elem;
     gridSize = heightmap.n_rows;
 
-//    cout << "nTerrainNodes = " << nTerrainNodes << endl;
-
-    vector<vector<uint> > tetrahedrons; // TODO: figure out how big this will be beforehand (should be easy), possibly convert to umat?
+    // we use 5 tetrahedrons to make up each "cube"
+    uint nTetrahedrons = (gridSize-1)*(gridSize-1)*5;
+    vector<vector<uint> > tetrahedrons(nTetrahedrons, vector<uint>(4));
 
     // loop over all all points except right and bottom edge
+    uint counter = 0;
     for (uint x = 0; x < gridSize-1; x++) { // not including the bottom edge
         for (uint y = 0; y < gridSize-1; y++) { // not including right edge
             for (uint tetrahedronType = 0; tetrahedronType < 5; tetrahedronType++) {
-                tetrahedrons.push_back(makeTetrahedron(tetrahedronType, x, y, gridSize, nTerrainNodes));
+                tetrahedrons[counter] = makeTetrahedron(tetrahedronType, x, y, gridSize, nTerrainNodes);
+                counter++;
             }
         }
     }
 
-//    printToEleNode(heightmap, tetrahedrons, filename);
     printToMsh(heightmap, tetrahedrons, filename);
+
+    cout << "HeightmapMesher::mesh() made " << counter << " tetrahedrons." << endl;
 }
 
 vector<uint> HeightmapMesher::makeTetrahedron(uint tetrahedronType, uint x, uint y, uint gridSize, uint nTerrainNodes) {
@@ -101,8 +104,6 @@ void HeightmapMesher::printToMsh(const mat& heightmap, const vector<vector<uint>
 
     ofstream ofile;
     ofile.open(filenameMaker.str().c_str());
-//    double norm = 1.0/gridSize;
-    double norm = 1.0;
 
     ofile << "$MeshFormat" << endl;
     ofile << "2.2 0 8" << endl;
@@ -118,22 +119,26 @@ void HeightmapMesher::printToMsh(const mat& heightmap, const vector<vector<uint>
     ofile << "$Nodes" << endl;
     ofile << nNodes << endl;
 
+
+    double gridNorm = 1.0/(gridSize-1); // scaling the grid so x and y is in [0,1]
+    double heightmapMin = min(min(heightmap));
+    double heightmapNorm = 1.0/(max(max(heightmap)) - heightmapMin);
     uint counter = 1; // counting starts at 1 in .msh files
     // Printing the heightmap to file
     for (uint i = 0; i < gridSize; i++) {
-        double x = i*norm;
+        double x = i*gridNorm;
         for (uint j = 0; j < gridSize; j++) {
-            double y = j*norm;
-            double z = heightmap(i,j);
+            double y = j*gridNorm;
+            double z = (heightmap(i,j) - heightmapMin)*heightmapNorm;
             ofile << counter << " " << x << " " << y << " " << z << endl;
             counter++;
         }
     }
     // Printing the zero height grid to file
     for (uint i = 0; i < gridSize; i++) {
-        double x = i*norm;
+        double x = i*gridNorm;
         for (uint j = 0; j < gridSize; j++) {
-            double y = j*norm;
+            double y = j*gridNorm;
             double z = 0.0;
             ofile << counter << " " << x << " " << y << " " << z << endl;
             counter++;

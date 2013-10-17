@@ -7,40 +7,40 @@
 using namespace std;
 using namespace arma;
 
-void parseArgs(int nArgs, const char* argv[], int &power2, string &filename, double &H, double &corners, bool &PBC, long &idum, int &RNG);
+void parseArgs(int nArgs, const char* argv[], int &power2, string &filename, double &H, double &corners, double& maxZValue, bool &PBC, long &idum, int &RNG);
 
-int main(int nArgs, const char *argv[])
-{
+int main(int nArgs, const char *argv[]) {
     int power2;
     string filename;
     double H;
-    double corners;
+    double minZValue;
+    double maxZValue;
     bool PBC;
     long idum;
     int RNG;
 
-    parseArgs(nArgs, argv, power2, filename, H, corners, PBC, idum, RNG);
+    parseArgs(nArgs, argv, power2, filename, H, minZValue, maxZValue, PBC, idum, RNG);
 
     cout << "--- Diamond-square settings --------------------" << endl;
     cout << "power2 = " << power2  << endl;
     cout << "filename = " << filename << endl;
-    cout << "H = " << H << endl;
-    cout << "corners = " << corners << endl;
+    cout << "H (Hurst exponent) = " << H << endl;
+    cout << "minZValue = " << minZValue << endl;
+    cout << "maxZValue = " << maxZValue << endl;
     cout << "PBC = " << std::boolalpha << PBC << std::noboolalpha << endl;
     cout << "idum = " << idum << endl;
-    cout << "RNG = " << RNG << endl;
+    cout << "RNG = " << RNG << " (0 == no RNG, 1 == uniform, 2 == standard normal distribution)" << endl;
     cout << "total number of points in grid = " << pow(pow(2, power2)+1, 2) << endl;
     cout << "------------------------------------------------" << endl;
 
     srand(idum); // setting the seed of the RNG for both C++'s rand()/srand() and Armadillo's randu()/randn()
 
     DiamondSquare generator(power2, idum, RNG, PBC);
-    mat R = generator.generate(H, corners);
+    mat R = generator.generate(H, minZValue, maxZValue);
 
 //    cout << "R = " << endl << R << endl;
 
     HeightmapMesher mesher;
-
     mesher.mesh(R, filename);
 
 //    R.save("rmat.dat", raw_ascii);
@@ -48,85 +48,34 @@ int main(int nArgs, const char *argv[])
     return 0;
 }
 
-
-
-//inline void convert_linear_index_to_3d_indices(int &index, int &nx, int &ny, int &nz, int* subscript) {
-//    /* converts linear index to 3d subscripts (indexes) */
-
-//    subscript[0] = index/(ny*nz);   // Node id in x-direction
-//    subscript[1] = (index/nz)%ny;   // Node id in y-direction
-//    subscript[2] = index%nz;        // Node id in z-direction
-//}
-
 void parseArgs(
         int nArgs,
         const char *argv[],
         int &power2,
         string &filename,
         double &H,
-        double &corners,
+        double &minZValue,
+        double &maxZValue,
         bool &PBC,
         long &idum,
         int &RNG) {
 
-    double default_H = 0.8;
-    double default_corners = 0.5;
-    bool default_PBC = true;
-    long default_idum = 1;
-    int default_RNG = 1;
-
-    if (nArgs == 3) {
-        power2   = atoi(argv[1]);
-        filename = argv[2];
-        H        = default_H;
-        corners  = default_corners;
-        PBC      = default_PBC;
-        idum     = default_idum;
-        RNG      = default_RNG;
-    } else if (nArgs == 4) {
-        power2   = atoi(argv[1]);
-        filename = argv[2];
-        H        = atof(argv[3]);
-        corners  = default_corners;
-        PBC      = default_PBC;
-        idum     = default_idum;
-        RNG      = default_RNG;
-    } else if (nArgs == 5) {
-        power2   = atoi(argv[1]);
-        filename = argv[2];
-        H        = atof(argv[3]);
-        corners  = atof(argv[4]);
-        PBC      = default_PBC;
-        idum     = default_idum;
-        RNG      = default_RNG;
-    } else if (nArgs == 6) {
-        power2   = atoi(argv[1]);
-        filename = argv[2];
-        H        = atof(argv[3]);
-        corners  = atof(argv[4]);
-        PBC      = atoi(argv[5]);
-        idum     = default_idum;
-        RNG      = default_RNG;
-    } else if (nArgs == 7) {
-        power2   = atoi(argv[1]);
-        filename = argv[2];
-        H        = atof(argv[3]);
-        corners  = atof(argv[4]);
-        PBC      = atoi(argv[5]);
-        idum     = atol(argv[6]);
-        RNG      = default_RNG;
-    } else if (nArgs == 8) {
-        power2   = atoi(argv[1]);
-        filename = argv[2];
-        H        = atof(argv[3]);
-        corners  = atof(argv[4]);
-        PBC      = atoi(argv[5]);
-        idum     = atol(argv[6]);
-        RNG      = atoi(argv[7]);
-    } else {
-        cout << "Usage: ./diamondSquare  power2  filename  optional:(H  corners  PBC[0|1]  idum[unsigned int]  RNG[0|1|2])" << endl;
+    if (nArgs < 3) {
+        cout << "Usage: ./diamondSquare  power2  filename  optional:(H[1,2]  min_value  max_value  PBC[0|1]  idum[unsigned int]  RNG[0|1|2])" << endl;
         exit(1);
     }
+
+    // arguments that are needed
+    power2   = atoi(argv[1]);
+    filename = argv[2];
+
+    // argument that have default values
+    H         = nArgs > 3 ? atof(argv[3]) : 1.5;
+    minZValue = nArgs > 4 ? atof(argv[4]) : 0.0;
+    maxZValue = nArgs > 5 ? atof(argv[5]) : 1.0;
+    PBC       = nArgs > 6 ? atoi(argv[6]) : true;
+    idum      = nArgs > 7 ? atol(argv[7]) : 1;
+    RNG       = nArgs > 8 ? atoi(argv[8]) : 2;
 }
 
 // to get QtCreator to run/debug programs correctly:
