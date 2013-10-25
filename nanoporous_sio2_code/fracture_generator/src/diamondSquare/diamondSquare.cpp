@@ -188,8 +188,7 @@ void DiamondSquare::rightEdgeDiamonds(const uint x, const uint y, const uint hal
     R(x, y + halfStepLength) = average + random()*RNGstddv;
 }
 
-inline double DiamondSquare::random()
-{
+inline double DiamondSquare::random() {
     // Returns random number with mean 0
     if (RNG == 0) {
         return 0.0;

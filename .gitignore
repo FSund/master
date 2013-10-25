@@ -14,5 +14,6 @@
 
 # Stuff
 *.x
-*.pro.user
+*.pro.user*
 *.xyz
+*/build-*

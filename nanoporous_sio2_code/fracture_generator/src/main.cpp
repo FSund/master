@@ -66,7 +66,7 @@ void parseArgs(
         int &RNG) {
 
     if (nArgs < 3) {
-        cout << "Usage: ./diamondSquare  power2  filename  optional:(H[1,2]  position_of_bottom_surface  position_of_top_surface  surface_delta_z  max_value  PBC[0|1]  idum[unsigned int]  RNG[0|1|2])" << endl;
+        cout << "Usage: ./diamondSquare  power2  filename  optional:(H[1,2]  position_of_bottom_surface  position_of_top_surface  surface_delta_z  PBC[0|1]  idum[unsigned int]  RNG[0|1|2])" << endl;
         exit(1);
     }
 
