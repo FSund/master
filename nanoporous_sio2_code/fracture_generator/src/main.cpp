@@ -19,7 +19,7 @@ int main(int nArgs, const char *argv[]) {
     double H;
     vec corners = {0.0};
     double sigma;
-    bool addition = false;
+    bool addition = true;
     bool PBC = true;
     int RNG = 2;
     int seed;
@@ -49,7 +49,7 @@ int main(int nArgs, const char *argv[]) {
     cout << "initial_RNG_stddv          = " << sigma << endl;
     cout << "PBC  = " << std::boolalpha << PBC << std::noboolalpha << endl;
     cout << "seed = " << seed << endl;
-//    cout << "RNG  = " << RNG << " (0 == no RNG, 1 == uniform, 2 == standard normal distribution)" << endl;
+    cout << "RNG  = " << RNG << " (0 == no RNG, 1 == uniform, 2 == standard normal distribution)" << endl;
     cout << "total number of points in grid = " << pow(pow(2, power2)+1, 2) << endl;
     cout << "------------------------------------------------" << endl;
 
@@ -69,7 +69,7 @@ int main(int nArgs, const char *argv[]) {
     ofile << "total number of points in grid = " << pow(pow(2, power2)+1, 2) << endl;
     ofile << "seed = " << seed << endl;
     ofile << "  Constant settings:" << endl;
-    ofile << "corners = "; for (uint i = 0; i < corners.size(); i++) cout << corners(i) << " "; cout << endl;
+    ofile << "corners = "; for (uint i = 0; i < corners.size(); i++) {ofile << corners(i) << " ";} ofile << endl;
     ofile << "addition = " << addition << endl;
     ofile << "PBC = " << PBC << endl;
     ofile << "RNG = " << RNG << endl;
