@@ -1,4 +1,6 @@
 #include <iostream>
+#include <fstream>
+#include <sstream>
 #include <cstdlib>      // atoi, atof, atol
 #include <armadillo>
 #include <src/diamondSquare/diamondSquare.h>
@@ -7,7 +9,7 @@
 using namespace std;
 using namespace arma;
 
-void normalize(mat &R, double position);
+void displace(mat &R, double position);
 
 int main(int nArgs, const char *argv[]) {
     string filename;
@@ -17,7 +19,7 @@ int main(int nArgs, const char *argv[]) {
     double H;
     vec corners = {0.0};
     double sigma;
-    bool addition = true;
+    bool addition = false;
     bool PBC = true;
     int RNG = 2;
     int seed;
@@ -45,32 +47,56 @@ int main(int nArgs, const char *argv[]) {
     cout << "position_of_bottom_surface = " << positionOfBottomSurface << endl;
     cout << "position_of_top_surface    = " << positionOfTopSurface << endl;
     cout << "initial_RNG_stddv          = " << sigma << endl;
-//    cout << "PBC  = " << std::boolalpha << PBC << std::noboolalpha << endl;
+    cout << "PBC  = " << std::boolalpha << PBC << std::noboolalpha << endl;
     cout << "seed = " << seed << endl;
 //    cout << "RNG  = " << RNG << " (0 == no RNG, 1 == uniform, 2 == standard normal distribution)" << endl;
     cout << "total number of points in grid = " << pow(pow(2, power2)+1, 2) << endl;
     cout << "------------------------------------------------" << endl;
 
-    srand(seed); // setting the seed of the RNG for both C++'s rand()/srand() and Armadillo's randu()/randn()
+    // Printing settings to <filename>-fracture_generator-settings.txt
+    stringstream fNameGen;
+    fNameGen << filename << "-fracture_generator-settings.txt";
+    ofstream ofile(fNameGen.str());
 
+    ofile << "--- Diamond-square settings --------------------" << endl;
+    ofile << "  Input arguments: " << endl;
+    ofile << "power2 = " << power2  << endl;
+    ofile << "filename = " << filename << endl;
+    ofile << "H (Hurst exponent) = " << H << endl;
+    ofile << "position_of_bottom_surface = " << positionOfBottomSurface << endl;
+    ofile << "position_of_top_surface    = " << positionOfTopSurface << endl;
+    ofile << "initial_RNG_stddv          = " << sigma << endl;
+    ofile << "total number of points in grid = " << pow(pow(2, power2)+1, 2) << endl;
+    ofile << "seed = " << seed << endl;
+    ofile << "  Constant settings:" << endl;
+    ofile << "corners = "; for (uint i = 0; i < corners.size(); i++) cout << corners(i) << " "; cout << endl;
+    ofile << "addition = " << addition << endl;
+    ofile << "PBC = " << PBC << endl;
+    ofile << "RNG = " << RNG << endl;
+    ofile << "------------------------------------------------" << endl;
+
+    srand(seed); // setting the seed of the RNG for both C++'s rand()/srand() and Armadillo's randu()/randn()
     DiamondSquare generator;
 
     seed = rand();
     mat bottomHeighmap = generator.generate(power2, H, corners, seed, sigma, addition, PBC, RNG);
-    normalize(bottomHeighmap, positionOfBottomSurface);
+    displace(bottomHeighmap, positionOfBottomSurface);
 
     seed = rand();
     mat topHeightmap = generator.generate(power2, H, corners, seed, sigma, addition, PBC, RNG);
-    normalize(topHeightmap, positionOfTopSurface);
+    displace(topHeightmap, positionOfTopSurface);
 
     Mesher mesher;
     mesher.mesh(topHeightmap, bottomHeighmap);
     mesher.printToMsh(filename);
 
+    cout << "max = " << max(max(topHeightmap)) << " " << max(max(bottomHeighmap)) << endl;
+    cout << "min = " << min(min(topHeightmap)) << " " << min(min(bottomHeighmap)) << endl;
+
     return 0;
 }
 
-void normalize(mat &R, double position) {
+void displace(mat &R, double position) {
 //    // normalize to range [minZ maxZ]
 //    zMin = positionOfBottomSurface - surfaceDeltaZ/2.0;
 //    zMax = positionOfBottomSurface + surfaceDeltaZ/2.0;
