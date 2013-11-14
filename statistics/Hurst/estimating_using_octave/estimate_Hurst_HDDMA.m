@@ -55,14 +55,10 @@ if dim==1
         for i = (m_lower+1):(N+m_upper) % +1 because matlab starts at 1
             imax = i - m_upper;
             imin = i - m_lower;
-            % i
-            % imax
-            % imin
             moving_average = mean( f(imin:imax) );
-            % moving_average
             sigma_DMA_squared(k) = sigma_DMA_squared(k) + (f(i) - moving_average)^2;
         end
-        sigma_DMA_squared(k) = sigma_DMA_squared(k)/(N-n_max);
+        sigma_DMA_squared(k) = sigma_DMA_squared(k)/(N-n_max); % See Carbone2007, equation (6)
     end
 
     x = log(nvec.*nvec);
@@ -85,30 +81,29 @@ if dim==2
     dim
     for k = 1:length(nvec) % loop over window sizes, using square windows (n1 == n2)
         n = nvec(k);
-        m = floor(n*theta);
-        if (theta == 1.0)
-            start = n-m+1;
-        else
-            start = n-m;
-        end
+
+        % See Gu2010, equation (2) for these ranges
+        m_lower = ceil((n-1)*(1-theta));
+        m_upper = -floor((n-1)*theta);
+
         sigma_DMA_squared(k) = 0;
-        for i = start:(N-m) % loop over window positions
-            imax = i+m;
-            imin = imax - n+1;
-            for j = start: (N-m) % loop over window positions
+        for i = (m_lower+1):(N+m_upper) % loop over window x-positions
+            imax = i - m_upper;
+            imin = i - m_lower;
+            for j = (m_lower+1):(N+m_upper) % loop over window y-positions
                 % the window is imin:imax, jmin:jmax
-                jmax = j+m;
-                jmin = jmax - n+1;
+                jmax = j - m_upper;
+                jmin = j - m_lower;
                 moving_average = mean(mean( f(imin:imax, jmin:jmax) )); % average of window
 
                 % NOTE: There is a difference between mean(mean()) as in moving_average above, and sum(sum())/n^2, but 
                 %       the error is of the size e-16. mean(mean()) is probably faster!
-                % moving_average = sum(sum(f(imin:imax, jmin:jmax)))/(n^2);
+                % Alternative is: moving_average = sum(sum(f(imin:imax, jmin:jmax)))/(n^2);
 
                 sigma_DMA_squared(k) = sigma_DMA_squared(k) + (f(i,j) - moving_average)^2;
             end
         end
-        sigma_DMA_squared(k) = sigma_DMA_squared(k)*(1/(N-n_max)^dim);
+        sigma_DMA_squared(k) = sigma_DMA_squared(k)*(1/(N-n_max)^dim); % See Carbone2007, equation (9)
     end
 
     x = log(dim.*(nvec.*nvec));
