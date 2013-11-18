@@ -1,7 +1,7 @@
 
 % estimate_Hurst_HDDMA.m
 
-function [H, nvec, sigma_DMA_squared] = estimate_Hurst_HDDMA(f, n_min, n_max, theta, show_plot)
+function [H, nvec, sigma_DMA_squared] = estimate_Hurst_HDDMA(f, n_min, n_max, step, theta, show_plot)
 
 %
 % Higher-Dimensional Detrending Moving Average
@@ -47,41 +47,41 @@ function [H, nvec, sigma_DMA_squared] = estimate_Hurst_HDDMA(f, n_min, n_max, th
 %
 % Example:
 % 1D:
-%   [H, nvec, sigma_DMA_squared] = estimate_Hurst_HDDMA(rand(1,1000), 10, 20, 0.0)
+%   [H, nvec, sigma_DMA_squared] = estimate_Hurst_HDDMA(rand(1,1000), 10, 20, 2, 0.0)
 % 2D:
-%   [H, nvec, sigma_DMA_squared] = estimate_Hurst_HDDMA(rand(100,100), 2, 10, 0.0)
+%   [H, nvec, sigma_DMA_squared] = estimate_Hurst_HDDMA(rand(100,100), 2, 10, 2, 0.0)
 %
 
-if nargin < 4
+if nargin < 6
     show_plot = false;
 end
 
 dim = sum(size(f) > 1);
 if (dim > 2)
-    disp('Input dimension too high');
-    return;
+    error('Input dimension too high');
 end
 if (dim < 1)
-    disp('Input dimension too high');
-    return;
+    error('Input dimension too low');
 end
 if (n_max <= 2)
-    disp('n_max should be > 2')
-    return;
+    error('n_max should be > 2')
+end
+if (n_max < n_min)
+    error('n_max should be > n_min')
 end
 if (theta > 1.0)
-    disp('theta should be < 1.0')
-    return;
+    error('theta should be < 1.0')
 end
-
 
 N = length(f);
-if (n_max/N > 0.1)
-    disp(['n_max should be << N = ' num2str(N)]);
-    return;
-end
+% if (n_max/N > 0.1)
+%     disp(['n_max should be << N = ' num2str(N)]);
+%     return;
+% end
+
 % n_min = 2;
-nvec = n_min:n_max;
+% step = 1;
+nvec = n_min:step:n_max;
 
 sigma_DMA_squared = zeros(1,length(nvec));
 if dim==1

@@ -11,7 +11,6 @@ if nargin < 3
     show_plot = false;
 end
 
-% f = data;
 N = length(f);
 nvec = floor(N./(2.^(0:n_steps-1)));
 rescaled_range = zeros(1, length(nvec));
