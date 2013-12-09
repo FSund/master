@@ -28,7 +28,7 @@ typedef unsigned int uint;
 
 uint tag_atom_type_within_distance_from_other_atom_type(Mts0_io* mts0_io, int atom_type_to_check_against, int atom_type_to_tag, double distance, int tag);
 uint tag_atom_type_within_distance_from_other_atom_type_ram(Mts0_io* mts0_io, int atom_type_to_check_against, int atom_type_to_tag, double distance, int tag);
-bool check_if_atom_of_type_exists_in_neighbor_voxels(
+bool check_if_atom_of_type_exists_within_distance_in_neighbor_voxels(
     const Mts0_io* mts0_io, 
     const vector<vector<vector<vector<uint> > > >& atoms_in_voxels, 
     const uint atom_index, 
@@ -36,7 +36,6 @@ bool check_if_atom_of_type_exists_in_neighbor_voxels(
     const uint i,
     const uint j,
     const uint k, 
-    const int atom_type_to_check_against,
     const double distance_squared,
     const vector<double> system_size_angstrom,
     const vector<double> half_system_size_angstrom);
@@ -44,9 +43,9 @@ double find_number_density_of_atom_type(Mts0_io *mts0_io, int atom_type);
 
 int main(int n_args, char* arg_vec[]) {
     
-    if (n_args < 5) {
+    if (n_args < 8) {
         // cout << "Arguments: input_mts0_folder  nx  ny  nz  n_voxels_x  n_voxels_y  n_voxels_z  atom_radius" << endl;
-        cout << "Arguments: input_mts0_folder  nx  ny  nz" << endl;
+        cout << "Arguments: input_mts0_folder  nx  ny  nz  r_start  r_step  n_steps" << endl;
         return 1;
     }
 
@@ -54,10 +53,13 @@ int main(int n_args, char* arg_vec[]) {
     int nx = atoi(arg_vec[2]);
     int ny = atoi(arg_vec[3]);
     int nz = atoi(arg_vec[4]);
+    double r_start = atof(arg_vec[5]);
+    double r_step = atof(arg_vec[6]);
+    double N = atoi(arg_vec[7]);
     // uint n_voxels_x = atoi(arg_vec[5]);
     // uint n_voxels_y = atoi(arg_vec[6]);
     // uint n_voxels_z = atoi(arg_vec[7]);
-    // double radius = atof(arg_vec[8]);
+    // double distance = atof(arg_vec[5]);
 
     Mts0_io mts0_io(nx, ny, nz);
     mts0_io.load_atoms(input_mts0_folder);
@@ -66,16 +68,26 @@ int main(int n_args, char* arg_vec[]) {
     int pore_atom_type = O_TYPE;
     int matrix_atom_type = SI_TYPE;
     int tag = X_TYPE;
-    double distance = 10.0;
 
-    uint n_tagged_atoms = tag_atom_type_within_distance_from_other_atom_type_ram(&mts0_io, matrix_atom_type, pore_atom_type, distance, tag);
+    vector<vector<double> > results(2, vector<double>(N));
+    for (uint i = 0; i < N; i++) {
+        double distance = r_start + r_step*i;
+        uint n_tagged_atoms = tag_atom_type_within_distance_from_other_atom_type_ram(&mts0_io, matrix_atom_type, pore_atom_type, distance, tag);
 
-    mts0_io.write_to_lammps("test_tagged.lmp");
+        double number_density = 0.0;
+        if (n_tagged_atoms > 0) {
+            number_density = find_number_density_of_atom_type(&mts0_io, tag);
+        }
 
-    cout << "Number of tagged atoms = " << n_tagged_atoms << endl;
-    double number_density = find_number_density_of_atom_type(&mts0_io, tag);
+        cout << "r = " << distance << endl;
+        cout << "Number of tagged atoms = " << n_tagged_atoms << endl;
+        cout << "Number density = " << number_density << endl;
 
-    cout << "Number density = " << number_density << " Å^-3" << endl;
+        results[0][i] = distance;
+        results[1][i] = number_density;
+    }
+
+    // mts0_io.write_to_lammps("test_tagged.lmp");
 
     return 0;
 }
@@ -141,7 +153,7 @@ double find_number_density_of_atom_type(Mts0_io *mts0_io, int atom_type) {
             con.put(i, x, y, z);
         }
     }
-    cout << "Total number of atoms of wanted type = " << n_atoms_of_wanted_type << endl;
+    // cout << "Total number of atoms of wanted type = " << n_atoms_of_wanted_type << endl;
 
     // Loop over all points in the particle_order po
     /* 
@@ -171,7 +183,7 @@ double find_number_density_of_atom_type(Mts0_io *mts0_io, int atom_type) {
             total_volume_of_voronoi_cells += cell.volume();
         } while (clo.inc()); // Increase c_loop_order to next particle, returns false if we're at the last particle
     }
-    cout << "Total volume of voronoi cells of atom with wanted type = " << total_volume_of_voronoi_cells << endl;
+    // cout << "Total volume of voronoi cells of atom with wanted type = " << total_volume_of_voronoi_cells << endl;
 
     // // Sum up the volumes, and check that this matches the container volume
     // double system_volume_angstrom = (x_max - x_min)*(y_max - y_min)*(x_max - x_min);
@@ -214,10 +226,14 @@ uint tag_atom_type_within_distance_from_other_atom_type_ram(Mts0_io* mts0_io, in
 
     // Filling atoms_in_voxels
     for (uint atom_index = 0; atom_index < mts0_io->positions.size(); atom_index++) {
-        uint i = mts0_io->positions[atom_index][0]/voxel_size_angstrom[0];
-        uint j = mts0_io->positions[atom_index][1]/voxel_size_angstrom[1];
-        uint k = mts0_io->positions[atom_index][2]/voxel_size_angstrom[2];
-        atoms_in_voxels[i][j][k].push_back(atom_index);
+        // Only putting atoms of the type we want to check against in the list, so we don't have to check when looping
+        // through the atoms in each voxel later on
+        if (mts0_io->atom_types[atom_index] == atom_type_to_check_against) {
+            uint i = mts0_io->positions[atom_index][0]/voxel_size_angstrom[0];
+            uint j = mts0_io->positions[atom_index][1]/voxel_size_angstrom[1];
+            uint k = mts0_io->positions[atom_index][2]/voxel_size_angstrom[2];
+            atoms_in_voxels[i][j][k].push_back(atom_index);
+        }
     }
 
     // Loop over all atoms
@@ -229,13 +245,12 @@ uint tag_atom_type_within_distance_from_other_atom_type_ram(Mts0_io* mts0_io, in
             uint j = mts0_io->positions[atom_index][1]/voxel_size_angstrom[1];
             uint k = mts0_io->positions[atom_index][2]/voxel_size_angstrom[2];
 
-            if (check_if_atom_of_type_exists_in_neighbor_voxels(
+            if (check_if_atom_of_type_exists_within_distance_in_neighbor_voxels(
                 mts0_io, 
                 atoms_in_voxels, 
                 atom_index, 
                 n_voxels, 
                 i,j,k, 
-                atom_type_to_check_against, 
                 distance_squared, 
                 system_size_angstrom, 
                 half_system_size_angstrom)) {
@@ -254,7 +269,7 @@ uint tag_atom_type_within_distance_from_other_atom_type_ram(Mts0_io* mts0_io, in
     return n_tagged_atoms;
 }
 
-bool check_if_atom_of_type_exists_in_neighbor_voxels(
+bool check_if_atom_of_type_exists_within_distance_in_neighbor_voxels(
     const Mts0_io* mts0_io, 
     const vector<vector<vector<vector<uint> > > >& atoms_in_voxels, 
     const uint atom_index, 
@@ -262,7 +277,6 @@ bool check_if_atom_of_type_exists_in_neighbor_voxels(
     const uint i,
     const uint j,
     const uint k, 
-    const int atom_type_to_check_against,
     const double distance_squared,
     const vector<double> system_size_angstrom,
     const vector<double> half_system_size_angstrom) {
@@ -275,14 +289,12 @@ bool check_if_atom_of_type_exists_in_neighbor_voxels(
                 uint jj = (j + dj + n_voxels[1]) % n_voxels[1];
                 uint kk = (k + dk + n_voxels[2]) % n_voxels[2];
                 for (auto it = atoms_in_voxels[ii][jj][kk].begin(); it != atoms_in_voxels[ii][jj][kk].end(); ++it) {
-                    if (mts0_io->atom_types[*it] == atom_type_to_check_against) {
                         vector<double> main_atom_position = mts0_io->positions[atom_index];
                         vector<double> position_to_check_against = mts0_io->positions[*it];
                         double dr_squared = calculate_distance_squared_using_minimum_image_convention(main_atom_position, position_to_check_against, system_size_angstrom, half_system_size_angstrom);
                         if (dr_squared < distance_squared) {
                             return true;
                         }
-                    }
                 }
             }
         }
