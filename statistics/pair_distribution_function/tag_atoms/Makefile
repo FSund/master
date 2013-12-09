@@ -1,4 +1,4 @@
-CC = g++ -I../mts0_io -O3
+CC = g++ -I../mts0_io -O3 -std=c++11
 PROG = tag_atoms
 
 ${PROG}.x: ${PROG}.o mts0_io.o
