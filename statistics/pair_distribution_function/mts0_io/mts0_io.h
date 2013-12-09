@@ -73,4 +73,6 @@ public:
 
   void load_atoms(string mts0_directory, vector<int> node_id_list = vector<int>());
   void save_atoms(string mts0_directory);
+
+  void write_to_lammps(string lammps_filename);
 };

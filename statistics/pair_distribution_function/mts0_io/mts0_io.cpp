@@ -588,3 +588,78 @@ double Mts0_io::get_min_distance_between_atom_types(int wanted_atom_type_0, int 
 
 	return sqrt(min_squared_distance);
 }
+
+void Mts0_io::write_to_lammps(string lammps_filename) {
+
+    // Credit goes to Svenn-Arne Dragly, source here: https://github.com/dragly/lammpshandler (we have permission to use the code without the GNU GLP license)
+    // Adapted for std::vector and mts0 by Filip Sund
+
+    ofstream lammps_file(lammps_filename.c_str(), ios::out | ios::binary);
+
+    int currentTimeStep = 0; // not implemented in mts0-files
+    int nAtomsTotal = positions.size();
+
+    // The system boundaries
+    vector<double> system_size = get_lx_ly_lz();
+    double xMin = 0.0;
+    double xMax = system_size[0];
+    double yMin = 0.0;
+    double yMax = system_size[1];
+    double zMin = 0.0;
+    double zMax = system_size[2];
+
+    // Shearing is zero unless the system boundaries are sheared
+    // I'm guessing this has something to do with the h-matrix, but I haven't looked into it, since we never really use
+    // the h-matrix for anything but the system size.
+    double xShear = 0.0;
+    double yShear = 0.0;
+    double zShear = 0.0;
+
+    // nColumns is the number of data types you want to write. 
+    // We write atom type, position(x,y,z), velocity(x,y,z) and atom_id
+    int nColumns = 1 + 3 + 3 + 1;
+
+    // We could divide the data into chunks by the LAMMPS file format, but we don't - i.e. only
+    // use one chunk. The chunk length is then the same as the number of atoms times the number
+    // of columns.
+    int nChunks = 1;
+    int chunkLength = nAtomsTotal * nColumns;
+
+    // Write all the above to the lammps file
+    lammps_file.write(reinterpret_cast<const char*>(&currentTimeStep), sizeof(int));
+    lammps_file.write(reinterpret_cast<const char*>(&nAtomsTotal), sizeof(int));
+    lammps_file.write(reinterpret_cast<const char*>(&xMin), sizeof(double));
+    lammps_file.write(reinterpret_cast<const char*>(&xMax), sizeof(double));
+    lammps_file.write(reinterpret_cast<const char*>(&yMin), sizeof(double));
+    lammps_file.write(reinterpret_cast<const char*>(&yMax), sizeof(double));
+    lammps_file.write(reinterpret_cast<const char*>(&zMin), sizeof(double));
+    lammps_file.write(reinterpret_cast<const char*>(&zMax), sizeof(double));
+    lammps_file.write(reinterpret_cast<const char*>(&xShear), sizeof(double));
+    lammps_file.write(reinterpret_cast<const char*>(&yShear), sizeof(double));
+    lammps_file.write(reinterpret_cast<const char*>(&zShear), sizeof(double));
+    lammps_file.write(reinterpret_cast<const char*>(&nColumns), sizeof(int));
+    lammps_file.write(reinterpret_cast<const char*>(&nChunks), sizeof(int));
+    lammps_file.write(reinterpret_cast<const char*>(&chunkLength), sizeof(int));
+
+    // Write all the data for each atom to file
+    for (uint i = 0; i < nAtomsTotal; i++) {
+        // IMPORTANT: Even atom numbers are usually integers, they must be written as doubles according to the LAMMPS standard.
+        double atom_type = atom_types[i];
+        lammps_file.write(reinterpret_cast<const char*>(&atom_type), sizeof(double));
+
+        // Write the position
+        lammps_file.write(reinterpret_cast<const char*>(&positions[i][0]), sizeof(double));
+        lammps_file.write(reinterpret_cast<const char*>(&positions[i][1]), sizeof(double));
+        lammps_file.write(reinterpret_cast<const char*>(&positions[i][2]), sizeof(double));
+
+        // Write the velocity
+        lammps_file.write(reinterpret_cast<const char*>(&velocities[i][0]), sizeof(double));
+        lammps_file.write(reinterpret_cast<const char*>(&velocities[i][1]), sizeof(double));
+        lammps_file.write(reinterpret_cast<const char*>(&velocities[i][2]), sizeof(double));
+
+        // Write atom id (double)
+        double atom_id = atom_ids[i];
+        lammps_file.write(reinterpret_cast<const char*>(&atom_id), sizeof(double));
+    }
+    lammps_file.close();
+}
