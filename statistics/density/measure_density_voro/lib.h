@@ -3,6 +3,8 @@
 #include <iomanip>
 #include <string>
 #include <fstream>
+#include <voro++.hh>
+#include <mts0_io.h>
 #include "bit_vector.h"
 
 using namespace std;
@@ -125,4 +127,87 @@ vector<vector<uint> > create_radial_neighbor_list(Mts0_io* mts0_io, const double
         radial_neighbor_list[i] = my_neighbors;
     }
     return radial_neighbor_list;
+}
+
+double find_number_density_of_atom_type(Mts0_io *mts0_io, int atom_type) {
+
+    vector<double> system_size_angstrom = mts0_io->get_lx_ly_lz();
+
+    // Set up constants for the container geometry
+    double x_min = 0, x_max = system_size_angstrom[0],
+           y_min = 0, y_max = system_size_angstrom[1],
+           z_min = 0, z_max = system_size_angstrom[2];
+
+    // Set up the number of blocks that the container is divided into
+    int n_x = 6, n_y = 6, n_z = 6;
+
+    // Create a container with the geometry given above, and make it periodic in each of the three coordinates. Allocate 
+    // space for "initial_n_particles_in_each_block" particles within each computational block
+    int initial_n_particles_in_each_block = 10;
+    // voro::container_periodic con(x_min, x_max, y_min, y_max, z_min, z_max, n_x, n_y, n_z, initial_n_particles_in_each_block); // Couldn't get this to work...
+    voro::container con(x_min, x_max, y_min, y_max, z_min, z_max, n_x, n_y, n_z, true, true, true, initial_n_particles_in_each_block);
+
+    // Add atoms into the container, putting the atoms with atom_type equal to a type in "atom_types" into the
+    // particle_order po so we can loop through those later
+    voro::particle_order po;
+    uint n_atoms_of_wanted_type = 0;
+    for (int i = 0; i < mts0_io->get_number_of_atoms(); i++) {
+        double x = mts0_io->positions[i][0], y = mts0_io->positions[i][1], z = mts0_io->positions[i][2];
+
+        // Check if the atom with index i is the type we're looking for, if so add the atom to the particle_order "po",
+        // else just add it to the container (need all atoms to get the correct voronoi cells, but we could probably 
+        // get away with just adding the surrounding atoms).
+        if (mts0_io->atom_types[i] == atom_type) {
+            con.put(po, i, x, y, z);
+            n_atoms_of_wanted_type++;
+        } else {
+            con.put(i, x, y, z);
+        }
+    }
+    // cout << "Total number of atoms of wanted type = " << n_atoms_of_wanted_type << endl;
+
+    // Loop over all points in the particle_order po
+    /* 
+        From example: http://math.lbl.gov/voro++/examples/loops/
+        "
+        On line 45, a c_loop_order class is created that is associated with the particle_order. A call is then made to 
+        the start function, which sets the loop class to consider the first particle. Usually this returns true, but it 
+        may return false in the case when there are no particles to consider.
+
+        If a true result is returned, then a do/while loop is entered. The compute_cell routine is called to calculate 
+        the Voronoi cell for the current particle in question. This routine returns true if the Voronoi cell was 
+        computed, and false if the cell could not be computed for any reason (such as being completely removed by a 
+        wall). Assuming a true result, the routine then queries the position of the current particle (on line 49), and 
+        then draws the Voronoi cell as a POV-Ray mesh, and as POV-Ray collection of spheres and cylinders. The inc 
+        routine is then called to advance the loop to the next particle to be considered. When the inc routine returns 
+        false, there are no more particles to be considered and the routine exits.
+
+        The loop therefore calculates Voronoi cells for all the particles that were previously stored on the 
+        particle_order class
+        "
+    */
+    voro::c_loop_order clo(con, po);
+    voro::voronoicell cell;
+    double total_volume_of_voronoi_cells = 0.0;
+    if (clo.start()) { // May return false if there are no particles in particle_order po
+        do if (con.compute_cell(cell, clo)) { // con.compute_cell() may return false if the cell couldn't be computed (ex: being completely removed by a wall)
+            total_volume_of_voronoi_cells += cell.volume();
+        } while (clo.inc()); // Increase c_loop_order to next particle, returns false if we're at the last particle
+    }
+    // cout << "Total volume of voronoi cells of atom with wanted type = " << total_volume_of_voronoi_cells << endl;
+
+    // // Sum up the volumes, and check that this matches the container volume
+    // double system_volume_angstrom = (x_max - x_min)*(y_max - y_min)*(x_max - x_min);
+    // double vvol = con.sum_cell_volumes();
+    // printf("Container volume : %g\n"
+    // "Voronoi volume   : %g\n"
+    // "Difference       : %g\n", system_volume_angstrom, vvol, vvol - system_volume_angstrom);
+
+    double number_density;
+    if (n_atoms_of_wanted_type == 0) {
+        number_density = 0.0;
+    } else {
+        number_density = n_atoms_of_wanted_type/total_volume_of_voronoi_cells;
+    }
+    return number_density;
 }

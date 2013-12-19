@@ -1,0 +1,41 @@
+#!/usr/bin/env ipython
+
+import matplotlib.pyplot as plt
+import numpy as np
+
+# folder = "./"
+folder = "./results_13_measuring_dr1.0_n10"
+data_files = !find $folder -maxdepth 1 -name 'output_*' | sort
+# data_files = list( data_files[i] for i in [0, 24, 49] )
+print data_files
+
+results = [] # empty list
+
+for idx, data_file in enumerate(data_files):
+
+    data = np.genfromtxt( # makes np.ndarray
+        data_file,
+        # names = True, #  If `names` is True, the field names are read from the first valid line
+        comments = '#', # Skip characters after #
+        # delimiter = '\t', # tab separated values
+        # dtype = None # guess the dtype of each column
+    )
+
+    results.append(data) # append to list
+
+results = np.array(results)
+
+for i in range(0, len(results)):
+    x = results[i,:,0]
+
+    plt.figure(0)
+    y = results[i,:,3]
+    plt.plot(x,y)
+
+    plt.figure(1)
+    y = results[i,:,1]
+    plt.plot(x,y)
+    
+plt.show()
+
+# print results

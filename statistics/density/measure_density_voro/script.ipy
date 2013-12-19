@@ -1,0 +1,64 @@
+#!/usr/bin/env ipython
+
+# *** How to have the most comfort scripting experience of your life ***
+# ######################################################################
+#
+# by using ipython for scripting combined with subcommands from bash!
+#
+# 1. echo "#!/usr/bin/env ipython3" > scriptname.ipy    # creates new ipy-file
+#
+# 2. chmod +x scriptname.ipy                            # make in executable
+#
+# 3. starting with line 2, write normal python or do some of
+#    the ! magic of ipython, so that you can use unix commands
+#    within python and even assign their output to a variable via
+#    var = !cmd1 | cmd2 | cmd3                          # enjoy ;)
+#
+# 4. run via ./scriptname.ipy - if it fails with recognizing % and !
+#    but parses raw python fine, please check again for the .ipy suffix
+
+import matplotlib.pyplot as plt
+import numpy as np
+
+!make
+
+state_folders = !find ~/13_measuring/ -name 'save_state-*' | sort
+command = './measure_density_water.x'
+r_start = 0.0
+r_step = 1.0
+n_steps = 10
+# output_file = 'output.txt'
+
+results = [] # empty list
+# state_folders = state_folders[0:3]
+
+# state_folders = list( state_folders[i] for i in [0, 24, 49] )
+for idx, state_folder in enumerate(state_folders):
+    mts0_folder = !find $state_folder -name 'mts0'
+
+    output_file = 'output_%04d.txt' %(idx)
+    args = mts0_folder.n + ' 5 5 5 %f %f %d %s' %(r_start, r_step, n_steps, output_file)
+
+    !$command $args
+
+    data = np.genfromtxt( # makes np.ndarray
+        output_file,
+        # names = True, #  If `names` is True, the field names are read from the first valid line
+        comments = '#', # Skip characters after #
+        # delimiter = '\t', # tab separated values
+        # dtype = None # guess the dtype of each column
+    )
+    # print data
+
+    results.append(data) # append to list
+
+results = np.array(results)
+
+for i in range(0, len(state_folders)):
+    x = results[i,:,0]
+    y = results[i,:,3]
+    plt.plot(x,y)
+    
+plt.show()
+
+# print results
