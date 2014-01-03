@@ -16,7 +16,7 @@ N = length(f);
 n_steps = max_n_steps;
 % decreasing number of steps until the shortest partial series length is larger than 1
 while (2^n_steps >= N)
-    n_steps = n_steps-1
+    n_steps = n_steps-1;
 end
 nvec = floor(N./(2.^(0:n_steps-1)));
 rescaled_range = zeros(1, length(nvec));
