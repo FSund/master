@@ -1,7 +1,7 @@
 
 % .m
 
-function [H, nvec, rescaled_range] = estimate_Hurst_1D_RS(f, n_steps, show_plot)
+function [H, nvec, rescaled_range] = estimate_Hurst_1D_RS(f, max_n_steps, show_plot)
 
 %
 % Estimate the Hurst exponent using rescaled range analysis: http://en.wikipedia.org/wiki/Hurst_exponent
@@ -12,6 +12,12 @@ if nargin < 3
 end
 
 N = length(f);
+
+n_steps = max_n_steps;
+% decreasing number of steps until the shortest partial series length is larger than 1
+while (2^n_steps >= N)
+    n_steps = n_steps-1
+end
 nvec = floor(N./(2.^(0:n_steps-1)));
 rescaled_range = zeros(1, length(nvec));
 for k = 1:length(nvec) % loop over length of partial series
