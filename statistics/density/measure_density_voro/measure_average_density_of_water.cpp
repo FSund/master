@@ -32,6 +32,7 @@ int main(int n_args, char* arg_vec[]) {
     Mts0_io mts0_io(nx, ny, nz);
     mts0_io.load_atoms(input_mts0_folder);
 
+    // Remove hydrogen atoms (might be a bad idea)
     for (uint i = 0; i < mts0_io.positions.size(); i++) {
         if (mts0_io.atom_types[i] == H_TYPE) {
             mts0_io.remove_atom(i);
@@ -40,7 +41,7 @@ int main(int n_args, char* arg_vec[]) {
     mts0_io.rearrange_vectors_by_moving_atoms_from_end_to_locations_where_atoms_have_been_removed(); // to update mts0_io
 
     double number_density = find_number_density_of_atom_type(&mts0_io, O_TYPE);
-    cout << "Density of water [atoms/Angstrom^3] = " << number_density << endl;
+    cout << "Number density of water [atoms/Angstrom^3] = " << number_density << endl;
 
     double M = 0.0180158;       // kg/mol
     double NA = 6.0221413e+23;  // Avogadro's number

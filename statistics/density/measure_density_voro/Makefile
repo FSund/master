@@ -1,22 +1,25 @@
 #CC = icpc -I../mts0_io -O3
-CC = g++ -std=c++11
-PROG = measure_density_water
+CC = g++ -std=c++11 -Wall -pedantic
 VORO = -I/usr/local/include/voro++ -L/usr/local/lib -lvoro++
 MTS0 = -I../mts0_io
+
 AVG = measure_average_density_of_atom_types
 AVG_WATER = measure_average_density_of_water
+MATRIX = measure_density_water_distance_from_matrix
 
-all: $(PROG).x $(AVG).x $(AVG_WATER).x
+all: $(MATRIX).x $(AVG).x $(AVG_WATER).x
 
 average: $(AVG).x
 
 average_water: $(AVG_WATER).x
 
-${PROG}.x: ${PROG}.o mts0_io.o
-	${CC} ${PROG}.o mts0_io.o ${VORO} -o ${PROG}.x
+matrix: $(MATRIX).x
 
-${PROG}.o: ${PROG}.cpp
-	${CC} -c ${PROG}.cpp ${VORO} ${MTS0} -Wall -pedantic
+${MATRIX}.x: ${MATRIX}.o mts0_io.o
+	${CC} ${MATRIX}.o mts0_io.o ${VORO} -o ${MATRIX}.x
+
+${MATRIX}.o: ${MATRIX}.cpp
+	${CC} -c ${MATRIX}.cpp ${VORO} ${MTS0} -Wall -pedantic
 
 ${AVG}.x: ${AVG}.o mts0_io.o
 	${CC} ${AVG}.o mts0_io.o ${VORO} -o ${AVG}.x

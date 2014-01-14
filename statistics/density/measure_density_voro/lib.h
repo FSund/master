@@ -188,13 +188,13 @@ double find_number_density_of_atom_type(Mts0_io *mts0_io, int atom_type) {
     */
     voro::c_loop_order clo(con, po);
     voro::voronoicell cell;
-    double total_volume_of_voronoi_cells = 0.0;
+    double total_volume_of_voronoi_cells_of_wanted_atom_type = 0.0;
     if (clo.start()) { // May return false if there are no particles in particle_order po
         do if (con.compute_cell(cell, clo)) { // con.compute_cell() may return false if the cell couldn't be computed (ex: being completely removed by a wall)
-            total_volume_of_voronoi_cells += cell.volume();
+            total_volume_of_voronoi_cells_of_wanted_atom_type += cell.volume();
         } while (clo.inc()); // Increase c_loop_order to next particle, returns false if we're at the last particle
     }
-    // cout << "Total volume of voronoi cells of atom with wanted type = " << total_volume_of_voronoi_cells << endl;
+    // cout << "Total volume of voronoi cells of atom with wanted type = " << total_volume_of_voronoi_cells_of_wanted_atom_type << endl;
 
     // // Sum up the volumes, and check that this matches the container volume
     // double system_volume_angstrom = (x_max - x_min)*(y_max - y_min)*(x_max - x_min);
@@ -207,7 +207,7 @@ double find_number_density_of_atom_type(Mts0_io *mts0_io, int atom_type) {
     if (n_atoms_of_wanted_type == 0) {
         number_density = 0.0;
     } else {
-        number_density = n_atoms_of_wanted_type/total_volume_of_voronoi_cells;
+        number_density = n_atoms_of_wanted_type/total_volume_of_voronoi_cells_of_wanted_atom_type;
     }
     return number_density;
 }

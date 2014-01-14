@@ -19,24 +19,29 @@
 
 import matplotlib.pyplot as plt
 import numpy as np
+import os.path
 
 !make
 
-state_folders = !find ~/13_measuring/ -name 'save_state-*' | sort
-command = './measure_density_water.x'
+state_folders = !find ~/14_measuring/ -name 'save_state-*' | sort
+command = './measure_density_water_distance_from_matrix.x'
 r_start = 0.0
-r_step = 1.0
-n_steps = 10
+r_step = 0.2
+n_steps = 60
 # output_file = 'output.txt'
 
 results = [] # empty list
 # state_folders = state_folders[0:3]
 
+output_folder = "results_14_measuring_dr%.1f_n%d" %(r_step, n_steps)
+!mkdir $output_folder
+
 # state_folders = list( state_folders[i] for i in [0, 24, 49] )
 for idx, state_folder in enumerate(state_folders):
     mts0_folder = !find $state_folder -name 'mts0'
 
-    output_file = 'output_%04d.txt' %(idx)
+    output_file = os.path.join(output_folder, 'output_%04d.txt' %(idx))
+    print output_file
     args = mts0_folder.n + ' 5 5 5 %f %f %d %s' %(r_start, r_step, n_steps, output_file)
 
     !$command $args

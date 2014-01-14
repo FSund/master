@@ -4,13 +4,15 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # folder = "./"
-folder = "./results_13_measuring_dr1.0_n10"
+# folder = "./results_14_measuring_dr1.0_n10"
+folder = "results_14_measuring_dr0.2_n60"
 data_files = !find $folder -maxdepth 1 -name 'output_*' | sort
 # data_files = list( data_files[i] for i in [0, 24, 49] )
-print data_files
+# print data_files
 
 results = [] # empty list
 
+## Load data from files
 for idx, data_file in enumerate(data_files):
 
     data = np.genfromtxt( # makes np.ndarray
@@ -23,19 +25,88 @@ for idx, data_file in enumerate(data_files):
 
     results.append(data) # append to list
 
-results = np.array(results)
+results = np.array(results) # convert to np.array
+density_row_index = 3
+n_tagged_atoms_row_index = 1
 
 for i in range(0, len(results)):
     x = results[i,:,0]
 
-    plt.figure(0)
-    y = results[i,:,3]
+#     # # plot density
+#     # plt.figure(0)
+#     # y = results[i,:,density_row_index]
+#     # plt.plot(x,y)
+
+    # plot number of atoms in each bin
+    plt.figure(1)
+    y = results[i,:,n_tagged_atoms_row_index]
     plt.plot(x,y)
 
-    plt.figure(1)
-    y = results[i,:,1]
-    plt.plot(x,y)
-    
+## Average over several timesteps
+import math
+n_plots = 5 # the number of lines in each plot (decides how many timesteps we average over)
+n_in_average = math.floor(len(results)/float(n_plots)) # number of timesteps for each line
+
+shape = np.array(np.shape(results[:,:,0]))
+shape[0] = n_plots
+
+average_density = np.zeros(shape)
+average_n_tagged_atoms = np.zeros(shape)
+for i in range(n_plots):
+    first = i*n_in_average
+    last = (i+1)*n_in_average
+    average_density[i] = np.mean(results[first:last, :, density_row_index], axis=0, dtype=np.float64)
+    average_n_tagged_atoms[i] = np.mean(results[first:last, :, n_tagged_atoms_row_index], axis=0, dtype=np.float64)
+
+legends = []
+n_timesteps_between_states = 10000
+n_states = len(results)
+total_n_timesteps = n_states*n_timesteps_between_states
+timestep_per_average = total_n_timesteps/float(n_plots)
+x = results[0,:,0] # all x-values are the same (should be at least)
+min_distance = 3.0
+xlim = np.argwhere(x>min_distance)[0] # find first value larger than "min_distance"
+
+for i in range(n_plots):
+    plt.figure(2)
+    # plt.plot(x, average_density[i])
+    # plt.plot(x[xlim:], average_density[i, xlim:], '-o')
+    plt.plot(x[xlim:], average_density[i, xlim:])
+
+    plt.figure(3)
+    plt.plot(x, average_n_tagged_atoms[i,:])
+    plt.plot(x[xlim:], average_n_tagged_atoms[i, xlim:])
+
+    legends.append("timesteps = %dk" %(round((i+1)*timestep_per_average/1000.0)))
+
+plt.figure(2)
+plt.legend(legends)
+# plt.axis([1.8, 10, 995, 1050])
+# plt.axis([3.7, 10, 995, 1050])
+# plt.axis([3.0, 20.5, 995, 1070])
+plt.ylim([995, 1075])
+plt.xlabel("Distance from silica matrix [A]")
+plt.ylabel("Density of water [kg/m^3]")
+title = "Plot of density of water as function of distance from the silica matrix, for different number of timesteps after injection of water"
+from textwrap import wrap
+plt.title("\n".join(wrap(title,80)))
+plt.savefig("density_water.png")
+
+plt.figure(3)
+plt.legend(legends)
+plt.xlabel("Distance from silica matrix [A]")
+plt.ylabel("Number of water molecules in each bin")
+title = "Plot of number of water molecules (in each bin) as function of distance from silica matrix. Bin width = 0.2 A."
+plt.title("\n".join(wrap(title,80)))
+# plt.xlim([3.0, 20.5])
+plt.ylim([0, 1500])
+plt.savefig("number_of_molecules.png")
+
+plt.ion() # Turns on interactive mode. This runs each figure/window (?) in a separate thread, so we can continue working on the command line without closing the windows.
 plt.show()
 
-# print results
+# # Something I tried to close the plots when I press a key
+# plt.ion() # turns on interactive mode -- returns to command line after showing plot
+# plt.show()
+plt.waitforbuttonpress() # Wait until clicking one of the windows/figures
+plt.close('all')
