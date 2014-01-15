@@ -31,7 +31,9 @@ for k = 1:length(nvec) % loop over length of partial series
         % S = std(X);
         S = sqrt(sum(Y.^2)/n);  % Uncorrected sample standard deviation
                                 % std(X) gives corrected sample standard deviation (same as S above, but replace n with n-1)
-        rescaled_range(k) = rescaled_range(k) + R/S;
+        if (S~=0)
+            rescaled_range(k) = rescaled_range(k) + R/S;
+        end
     end
     rescaled_range(k) = rescaled_range(k)/(N/n); % divide by number of partial series of length n
 end
