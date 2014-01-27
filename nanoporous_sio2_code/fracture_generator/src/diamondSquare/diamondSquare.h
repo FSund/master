@@ -1,13 +1,3 @@
-#ifndef DIAMONDSQUARE_H
-#define DIAMONDSQUARE_H
-
-#include <iostream>
-
-#include <armadillo>
-
-using namespace std;
-using namespace arma;
-
 /*! \brief This class creates a randomly generated heightmap using either successive random additions algorithm or
            successive random displacement algorithm.
 
@@ -56,8 +46,25 @@ using namespace arma;
     and in the book "Fundamental Algorithms for Computer Graphics" in the chapter "Random fractal forgeries" by Voss R. F.
 */
 
+#ifndef DIAMONDSQUARE_H
+#define DIAMONDSQUARE_H
+
+#include <iostream>
+#include <vector>
+#include <cmath>        // pow,
+
+#include <src/random/random.h>
+
+typedef unsigned int uint;
+
+using namespace std;
+
 class DiamondSquare {
 public:
+    DiamondSquare(const uint power2, const uint RNG = 2, const long seed = 1);
+    void setSeed(const long seed);
+    void setRNG(const uint newRNG);
+
     /*!
         \brief generate The method used to generate a heightmap. Returns a reference to the member armadillo matrix.
 
@@ -102,22 +109,21 @@ public:
         \param RNG an unsigned in the selects which random number generator to use (0 just returns 0.0, 1 uses a uniform
                distribution, 2 uses a normal distribution).
     */
-    mat& generate(const uint power2,
-            const double H,
-            const vec corners,
-            const long seed,
-            const double sigma,
-            const bool addition,
-            const bool PBC,
-            const uint RNG);
+    vector<vector<double> >& generate(
+            double H,
+            vector<double> corners = vector<double>(),
+            double sigma = 1.0,
+            double randomFactor = 0.5,
+            bool addition = true,
+            bool PBC = false);
 
 private:
     /*!
         The function that does the diamond- and square-steps.
     */
-    void runDiamondSquare(mat &R, const double H, const double sigma);
-    double square(const uint x, const uint y, const uint halfStepLength, const double RNGstddv, const mat &R);
-    double diamond(const uint x, const uint y, const uint halfStepLength, const double RNGstddv, const mat &R);
+    void runDiamondSquare(vector<vector<double> > &R, const double H, double initialSigma, const double randomFactor, const bool addition, const bool _PBC);
+    double meanOfSquare(const uint x, const uint y, const uint halfStepLength, const vector<vector<double> > &R);
+    double meanOfDiamond(const uint x, const uint y, const uint halfStepLength, const vector<vector<double> > &R);
 
     /*!
         Since we can toggle the periodic boundaries we have made separate methods to do the diamond-step without
@@ -133,26 +139,24 @@ private:
         \param R the armadillo matrix that has the current heightmap.
         \return returns the value of the new point.
      */
-    double nonPBCbottomEdgeDiamonds(const uint x, const uint y, const uint halfStepLength, const double RNGstddv, mat &R);
+    double nonPBCbottomEdgeDiamonds(const uint x, const uint y, const uint halfStepLength, vector<vector<double> > &R);
     /*!
         \brief rightEdgeDiamonds See \a nonPBCbottomEdgeDiamonds.
         \sa nonPBCbottomEdgeDiamonds()
     */
-    double nonPBCrightEdgeDiamonds(const uint x, const uint y, const uint halfStepLength, const double RNGstddv, mat &R);
+    double nonPBCrightEdgeDiamonds(const uint x, const uint y, const uint halfStepLength, vector<vector<double> > &R);
 
     /*!
-        \brief random the function that generates the random number for the random displacement.
-        For now we're just using the built-in methods of Armadillo.
+        \brief random Generates random numbers using a separate class.
         \return returns a random number, whose distribution depends on the boolean member variable \a PBC.
      */
     double random();
 
-    mat R;
-    uint power2, systemSize, zerolength;
+    uint power2, systemSize;
+    vector<vector<double> > R;
+    Random *rnd;
     int RNG;
-    bool PBC;
-    double sigma;
-    bool addition;
+    uint PBC;
 };
 
 #endif // DIAMONDSQUARE_H

@@ -131,11 +131,8 @@ void Mesher::printToMsh(std::string filename) {
 
 //    uint nNodes = 2*nTerrainNodes;
 
-    stringstream filenameMaker;
-    filenameMaker << filename << ".msh";
-
     ofstream ofile;
-    ofile.open(filenameMaker.str().c_str());
+    ofile.open(filename);
 
     ofile << "$MeshFormat" << endl;
     ofile << "2.2 0 8" << endl;
