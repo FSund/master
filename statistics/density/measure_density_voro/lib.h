@@ -152,7 +152,9 @@ double find_number_density_of_atom_type(Mts0_io *mts0_io, int atom_type) {
     voro::particle_order po;
     uint n_atoms_of_wanted_type = 0;
     for (int i = 0; i < mts0_io->get_number_of_atoms(); i++) {
-        double x = mts0_io->positions[i][0], y = mts0_io->positions[i][1], z = mts0_io->positions[i][2];
+        double x = mts0_io->positions[i][0];
+        double y = mts0_io->positions[i][1];
+        double z = mts0_io->positions[i][2];
 
         // Check if the atom with index i is the type we're looking for, if so add the atom to the particle_order "po",
         // else just add it to the container (need all atoms to get the correct voronoi cells, but we could probably 

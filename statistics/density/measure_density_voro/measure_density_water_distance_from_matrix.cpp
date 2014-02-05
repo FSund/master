@@ -79,7 +79,7 @@ int main(int n_args, char* arg_vec[]) {
 
     int pore_atom_type = O_TYPE;
     int matrix_atom_type = SI_TYPE;
-    int tag = X_TYPE;
+    int tag = 10;
 
     vector<vector<double> > results;
     for (uint i = 1; i <= N; i++) {
@@ -103,6 +103,8 @@ int main(int n_args, char* arg_vec[]) {
 
         vector<double> temp_results = {distance, double(n_tagged_atoms), number_density, density_water};
         results.push_back(temp_results);
+        
+        tag++;
     }
 
     ofstream fout(output_file);
