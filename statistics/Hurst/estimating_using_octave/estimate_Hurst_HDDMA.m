@@ -50,11 +50,11 @@ function [H, n_vec, sigma_DMA_squared] = estimate_Hurst_HDDMA(f, theta, n_min, n
 %
 
 if nargin < 6
-    show_plot = false;
-end
-
-if ( (nargout == 0) && (nargin < 6) )
-    show_plot = true;
+    if nargout == 0
+        show_plot = true;
+    else
+        show_plot = false;
+    end
 end
 
 if (nargin > 2 && nargin < 5 || nargin == 0 || (nargin < 2 && nargin > 0))
@@ -87,44 +87,29 @@ if (theta > 1.0)
     error('theta should be in [0.0, 1.0]')
 end
 
+if (n_max > floor(N/4))
+    error('n_max should be << N (n_max < N/4)')
+end
+
 n_vec = n_min:n_step:n_max;
 sigma_DMA_squared = zeros(1, length(n_vec));
 
 % debug %
-n_min
-n_max
-n_step
-theta
-show_plot
+% n_min
+% n_max
+% n_step
+% theta
+% show_plot
+% dim
 % debug %
 
-if dim==1
-    
+if dim==1    
     if false
-        % old implementation
-        for k = 1:length(nvec)
-            n = nvec(k);
-
-            % See Gu2010, equation (2) for these ranges
-            m_lower = ceil((n-1)*(1-theta));
-            m_upper = -floor((n-1)*theta);
-
-            sigma_DMA_squared(k) = 0;
-            for i = (m_lower+1):(N+m_upper) % +1 because matlab starts at 1
-                imax = i - m_upper;
-                imin = i - m_lower;
-                moving_average = mean( f(imin:imax) );
-                sigma_DMA_squared(k) = sigma_DMA_squared(k) + (f(i) - moving_average)^2;
-            end
-            sigma_DMA_squared(k) = sigma_DMA_squared(k)/(N-n_max); % See Carbone2007, equation (6)
-        end
-    end
-    
-    if true
         % new implementation
         for i_n = 1:length(n_vec) % loop over window sizes
             n = n_vec(i_n);
             m = floor(n*theta);
+            alpha = n/(n + 1); % for new f_tilde_star (eq. 12 in Carbone)
             
             if theta == 1.0
                 % If theta == 1.0, then m == n, so (n-m) == 0, and f(0) is
@@ -149,41 +134,44 @@ if dim==1
             sigma_DMA_squared(i_n) = sigma_DMA_squared(i_n)/(N - max(n_vec));
         end
     end
+    
+    if true
+        % new new implementation
+        for i_n = 1:length(n_vec) % loop over window sizes
+            n = n_vec(i_n);
+            m = floor(n*theta);
+            alpha = n/(n + 1); % for new f_tilde_star (eq. 12 in Carbone)
+            
+            if theta == 1.0
+                % If theta == 1.0, then m == n, so (n-m) == 0, and f(0) is
+                % illegal in Matlab. So we add +1 to the start point
+                % Also add +1 since we use f_tilde (see comment below)
+                start = n - m + 2;
+            else 
+                % Add +1 to start, since the new f_tilde_star uses
+                % f_tilde(i-1), which uses f(i-1)
+                start = n - m + 1;
+            end
+            for i = start:(N-m)
+                % New f_tilde_star
+                % 'new_f_tilde' is f_tilde(i-1)
+                i_lower = ((i-1)-n+1+m);
+                    i_upper = ((i-1)+m);
+                new_f_tilde_sum = 0.0;
+                for k = i_lower:i_upper
+                    new_f_tilde_sum = new_f_tilde_sum + f(k);
+                end
+                new_f_tilde = new_f_tilde_sum/n;
+                f_tilde_star = (1-alpha)*f(i) + alpha*new_f_tilde;
+                sigma_DMA_squared(i_n) = sigma_DMA_squared(i_n) + (f(i) - f_tilde_star)^2;
+            end
+            sigma_DMA_squared(i_n) = sigma_DMA_squared(i_n)/(N - max(n_vec));
+        end
+    end
 end
 
 if dim==2
-
     if false
-        % Old implementation
-        for k = 1:length(n_vec) % loop over window sizes, using square windows (n1 == n2)
-            n = n_vec(k);
-
-            % See Gu2010, equation (2) for these ranges
-            m_lower = ceil((n-1)*(1-theta));
-            m_upper = -floor((n-1)*theta);
-
-            sigma_DMA_squared(k) = 0;
-            for i = (m_lower+1):(N+m_upper) % loop over window x-positions
-                imax = i - m_upper;
-                imin = i - m_lower;
-                for j = (m_lower+1):(N+m_upper) % loop over window y-positions
-                    % the window is imin:imax, jmin:jmax
-                    jmax = j - m_upper;
-                    jmin = j - m_lower;
-                    moving_average = mean(mean( f(imin:imax, jmin:jmax) )); % average of window
-
-                    % NOTE: There is a difference between mean(mean()) as in moving_average above, and sum(sum())/n^2, but 
-                    %       the error is of the size e-16. mean(mean()) is probably faster!
-                    % Alternative is: moving_average = sum(sum(f(imin:imax, jmin:jmax)))/(n^2);
-
-                    sigma_DMA_squared(k) = sigma_DMA_squared(k) + (f(i,j) - moving_average)^2;
-                end
-            end
-            sigma_DMA_squared(k) = sigma_DMA_squared(k)*(1/(N-n_max)^dim); % See Carbone2007, equation (9)
-        end
-    end
-    
-    if true
         % New implementation
         for i_n = 1:length(n_vec) % loop over window sizes
             n = n_vec(i_n);
@@ -192,6 +180,8 @@ if dim==2
             if theta == 1.0
                 % If theta == 1.0, then m == n, so (n-m) == 0, and f(0) is
                 % illegal in Matlab. So we add +1 to the start point
+                % TODO: Check if this is a problem in f_tilde below, since
+                %       we divide by n^2, which should perhaps be (n-1)^2
                 start = n - m + 1;
             else 
                 start = n - m;
@@ -213,12 +203,57 @@ if dim==2
                     f_tilde = sum(sum( f((i-n+1+m):(i+m), (j-n+1+m):(j+m)) ))/n^2; % fastest
                     sigma_DMA_squared(i_n) = sigma_DMA_squared(i_n) + (f(i,j) - f_tilde)^2;
                 end
-                sigma_DMA_squared(i_n) = sigma_DMA_squared(i_n)/(N - max(n_vec))^2;
             end
+            sigma_DMA_squared(i_n) = sigma_DMA_squared(i_n)/(N - max(n_vec))^2;
+        end
+    end
+    
+    if true
+        % New new implementation
+        for i_n = 1:length(n_vec) % loop over window sizes
+            n = n_vec(i_n);
+            m = floor(n*theta);
+            alpha = n^2/(n + 1)^2;
+            
+            if theta == 1.0
+                % If theta == 1.0, then m == n, so (n-m) == 0, and f(0) is
+                % illegal in Matlab. So we add +1 to the start point
+                % We also add +1 since we're using f_tilde_star
+                start = n - m + 2;
+            else 
+                % Add +1 since we're using f_tilde_star
+                start = n - m + 1;
+            end
+            for i = start:(N-m)
+                for j = start:(N-m)
+                    % New f_tilde_star
+                    % 'new_f_tilde' is f_tilde(i-1)
+                    
+                    % Manual (not tested)
+%                     new_f_tilde_sum = 0.0;
+%                     for k = ((i-1)-n+1+m):((i-1)+m)
+%                         for l = ((j-1)-n+1+m):((j-1)+m)
+%                             new_f_tilde_sum = new_f_tilde_sum + f(k,l);
+%                         end
+%                     end
+%                     new_f_tilde = new_f_tilde_sum/n^2;
+                    
+                    % Auto
+                    i_lower = ((i-1)-n+1+m);
+                    i_upper = ((i-1)+m);
+                    j_lower = ((j-1)-n+1+m);
+                    j_upper = ((j-1)+m);
+                    new_f_tilde = sum(sum( f(i_lower:i_upper, j_lower:j_upper) ))/n^2;
+                    
+                    f_tilde_star = (1-alpha)*f(i,j) + alpha*new_f_tilde;
+                    sigma_DMA_squared(i_n) = sigma_DMA_squared(i_n) + (f(i,j) - f_tilde_star)^2;
+                end
+            end
+            sigma_DMA_squared(i_n) = sigma_DMA_squared(i_n)/(N - max(n_vec))^2;
         end
     end
 end
-        
+
 x = log(dim.*(n_vec.*n_vec));
 y = log(sigma_DMA_squared);
 fit = polyfit(x, y, 1);
