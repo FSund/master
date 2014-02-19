@@ -18,9 +18,9 @@ typedef unsigned int uint;
 #define X_TYPE 7
 
 int main(int n_args, char* arg_vec[]) {
-    int min_n_args = 5;
+    int min_n_args = 6;
     if (n_args < min_n_args) {
-        cout << "Usage: executable.x  input_mts0_folder  nx  ny  nz" << endl;
+        cout << "Usage: executable.x  input_mts0_folder  nx  ny  nz  min_distance_from_matrix" << endl;
         exit(1);
     }
 
@@ -28,6 +28,7 @@ int main(int n_args, char* arg_vec[]) {
     int nx = atoi(arg_vec[2]);
     int ny = atoi(arg_vec[3]);
     int nz = atoi(arg_vec[4]);
+    double min_distance_from_matrix = atof(arg_vec[5]);
 
     Mts0_io mts0_io(nx, ny, nz);
     mts0_io.load_atoms(input_mts0_folder);
@@ -40,7 +41,14 @@ int main(int n_args, char* arg_vec[]) {
     }
     mts0_io.rearrange_vectors_by_moving_atoms_from_end_to_locations_where_atoms_have_been_removed(); // to update mts0_io
 
-    double number_density = find_number_density_of_atom_type(&mts0_io, O_TYPE);
+    int pore_atom_type = O_TYPE;
+    int matrix_atom_type = SI_TYPE;
+    int tag = 10;
+
+    // Tag O-type atoms too close to matrix with another tag
+    tag_atom_type_within_distance_from_other_atom_type(&mts0_io, matrix_atom_type, pore_atom_type, min_distance_from_matrix, tag);
+
+    double number_density = find_number_density_of_atom_type(&mts0_io, pore_atom_type);
     cout << "Number density of water [atoms/Angstrom^3] = " << number_density << endl;
 
     double M = 0.0180158;       // kg/mol

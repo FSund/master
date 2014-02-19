@@ -213,3 +213,119 @@ double find_number_density_of_atom_type(Mts0_io *mts0_io, int atom_type) {
     }
     return number_density;
 }
+
+inline bool check_if_atom_of_type_exists_within_distance_in_neighbor_voxels(
+    const Mts0_io* mts0_io, 
+    const vector<vector<vector<vector<uint> > > >& atoms_in_voxels, 
+    const uint atom_index, 
+    const vector<uint>& n_voxels,
+    const uint i,
+    const uint j,
+    const uint k, 
+    const double distance_squared,
+    const vector<double>& system_size_angstrom,
+    const vector<double>& half_system_size_angstrom) {
+
+    // Loop over 27 nearest neighbors (including self (maybe not necessary? but probably faster to not check if di,dj,dk==0))
+    for (int di = -1; di <= 1; di++) {
+        for (int dj = -1; dj <= 1; dj++) {
+            for (int dk = -1; dk <= 1; dk++) {
+                // Periodic boundary conditions
+                uint ii = (i + di + n_voxels[0]) % n_voxels[0];
+                uint jj = (j + dj + n_voxels[1]) % n_voxels[1];
+                uint kk = (k + dk + n_voxels[2]) % n_voxels[2];
+                for (auto it = atoms_in_voxels[ii][jj][kk].begin(); it != atoms_in_voxels[ii][jj][kk].end(); ++it) {
+                    vector<double> main_atom_position = mts0_io->positions[atom_index];
+                    vector<double> position_to_check_against = mts0_io->positions[*it];
+                    double dr_squared = calculate_distance_squared_using_minimum_image_convention(main_atom_position, position_to_check_against, system_size_angstrom, half_system_size_angstrom);
+                    if (dr_squared < distance_squared) {
+                        return true;
+                    }
+                }
+            }
+        }
+    }
+
+    return false;
+}
+
+uint tag_atom_type_within_distance_from_other_atom_type(Mts0_io* mts0_io, int atom_type_to_check_against, int atom_type_to_tag, double distance, int tag) {
+
+    vector<double> system_size_angstrom = mts0_io->get_lx_ly_lz();
+    vector<double> half_system_size_angstrom = {
+        system_size_angstrom[0]/2.0,
+        system_size_angstrom[1]/2.0,
+        system_size_angstrom[2]/2.0,
+    };
+
+    vector<uint> n_voxels = {
+        uint(ceil(system_size_angstrom[0]/distance)),
+        uint(ceil(system_size_angstrom[1]/distance)),
+        uint(ceil(system_size_angstrom[2]/distance))
+    };
+
+    // If we use a very small distance (which we usually only do when starting at 0.0 and using a small step in this program)
+    // we sometimes get very small voxels in the first couple of cycles. This uses a lot of memory, without any real need
+    // for it, and the program takes a lot longer to finish. So we limit the max number of voxels.
+    uint max_n_voxels = 256; // 512 uses ~3.1 GiB memory, 256 uses ~400 MiB (and 256 is a lot faster than 512)
+    while (n_voxels[0] > max_n_voxels || n_voxels[1] > max_n_voxels || n_voxels[2] > max_n_voxels) {
+        for (uint i = 0; i < 3; i++) {
+            n_voxels[i] = ceil(double(n_voxels[i])/2.0);
+        }
+    }
+    // cout << "n_voxels = " << n_voxels[0] << ", " << n_voxels[1] << ", " << n_voxels[2] << endl; 
+
+    vector<double> voxel_size_angstrom = {
+        system_size_angstrom[0]/n_voxels[0],
+        system_size_angstrom[1]/n_voxels[1],
+        system_size_angstrom[2]/n_voxels[2]
+    };
+
+    vector<vector<vector<vector<uint> > > > atoms_in_voxels(n_voxels[0], 
+        vector<vector<vector<uint> > >(n_voxels[1], 
+            vector<vector<uint> >(n_voxels[2], 
+                vector<uint>()
+            )
+        )
+    );
+
+    // Filling atoms_in_voxels
+    for (uint atom_index = 0; atom_index < mts0_io->positions.size(); atom_index++) {
+        // Only putting atoms of the type we want to check against in the list, so we don't have to check for atom type 
+        // when looping through the atoms in each voxel later on
+        if (mts0_io->atom_types[atom_index] == atom_type_to_check_against) {
+            uint i = mts0_io->positions[atom_index][0]/voxel_size_angstrom[0];
+            uint j = mts0_io->positions[atom_index][1]/voxel_size_angstrom[1];
+            uint k = mts0_io->positions[atom_index][2]/voxel_size_angstrom[2];
+            atoms_in_voxels[i][j][k].push_back(atom_index);
+        }
+    }
+
+    // Loop over all atoms
+    double distance_squared = distance*distance;
+    uint n_tagged_atoms = 0;
+    for (uint atom_index = 0; atom_index < mts0_io->positions.size(); atom_index++) {
+        if (mts0_io->atom_types[atom_index] == atom_type_to_tag) {
+            uint i = mts0_io->positions[atom_index][0]/voxel_size_angstrom[0];
+            uint j = mts0_io->positions[atom_index][1]/voxel_size_angstrom[1];
+            uint k = mts0_io->positions[atom_index][2]/voxel_size_angstrom[2];
+
+            if (check_if_atom_of_type_exists_within_distance_in_neighbor_voxels(
+                mts0_io, 
+                atoms_in_voxels, 
+                atom_index, 
+                n_voxels, 
+                i,j,k, 
+                distance_squared, 
+                system_size_angstrom, 
+                half_system_size_angstrom)) {
+
+                mts0_io->atom_types[atom_index] = tag;
+                n_tagged_atoms++;
+            }
+
+        }
+    }
+
+    return n_tagged_atoms;
+}
