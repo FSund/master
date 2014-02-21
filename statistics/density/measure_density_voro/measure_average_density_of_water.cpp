@@ -3,7 +3,9 @@
 #include <map>
 #include <vector>
 
+#include <mts0_io.h>
 #include "lib.h"
+//#include "mts0_io.h"
 
 using namespace std;
 
@@ -31,22 +33,30 @@ int main(int n_args, char* arg_vec[]) {
     double min_distance_from_matrix = atof(arg_vec[5]);
 
     Mts0_io mts0_io(nx, ny, nz);
+    cout << "Loading atoms from \"" << input_mts0_folder << "\" ...";
     mts0_io.load_atoms(input_mts0_folder);
+    cout << "DONE" << endl;
 
     // Remove hydrogen atoms (might be a bad idea)
+    cout << "Removing hydrogen atoms ...";
     for (uint i = 0; i < mts0_io.positions.size(); i++) {
         if (mts0_io.atom_types[i] == H_TYPE) {
             mts0_io.remove_atom(i);
         }
     }
     mts0_io.rearrange_vectors_by_moving_atoms_from_end_to_locations_where_atoms_have_been_removed(); // to update mts0_io
+    cout << "DONE" << endl;
 
     int pore_atom_type = O_TYPE;
     int matrix_atom_type = SI_TYPE;
     int tag = 10;
 
-    // Tag O-type atoms too close to matrix with another tag
-    tag_atom_type_within_distance_from_other_atom_type(&mts0_io, matrix_atom_type, pore_atom_type, min_distance_from_matrix, tag);
+    if (min_distance_from_matrix > 0.0) {
+        // Tag O-type atoms too close to matrix with another tag
+        cout << "Tagging oxygen atoms closer to the matrix than " << min_distance_from_matrix << " A ...";
+        tag_atom_type_within_distance_from_other_atom_type(&mts0_io, matrix_atom_type, pore_atom_type, min_distance_from_matrix, tag);
+        cout << "DONE" << endl;
+    }
 
     double number_density = find_number_density_of_atom_type(&mts0_io, pore_atom_type);
     cout << "Number density of water [atoms/Angstrom^3] = " << number_density << endl;

@@ -1,5 +1,5 @@
 #CC = icpc -I../mts0_io -O3
-CC = g++ -std=c++11 -Wall -pedantic
+CC = g++ -std=c++11 -Wall -pedantic -O3
 VORO = -I/usr/local/include/voro++ -L/usr/local/lib -lvoro++
 MTS0 = -I../mts0_io
 

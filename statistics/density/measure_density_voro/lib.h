@@ -4,8 +4,9 @@
 #include <string>
 #include <fstream>
 #include <voro++.hh>
+
 #include <mts0_io.h>
-#include "bit_vector.h"
+//#include "bit_vector.h"
 
 using namespace std;
 
@@ -43,53 +44,53 @@ double calculate_distance_squared_using_minimum_image_convention(
     return dr_vector[0]*dr_vector[0] + dr_vector[1]*dr_vector[1] + dr_vector[2]*dr_vector[2];
 }
 
-void print_bitmatrix_to_vtk(const BitMatrix& matrix, const vector<double> voxel_size_angstrom, string output_file) {
-    cout << "Printing to .vtk-format." << endl;
+//void print_bitmatrix_to_vtk(const BitMatrix& matrix, const vector<double> voxel_size_angstrom, string output_file) {
+//    cout << "Printing to .vtk-format." << endl;
 
-    ofstream ofile;
-    ofile.open(output_file);
+//    ofstream ofile;
+//    ofile.open(output_file.c_str());
 
-    uint nx = matrix.n_rows;
-    uint ny = matrix.n_cols;
-    uint nz = matrix.n_slices;
+//    uint nx = matrix.n_rows;
+//    uint ny = matrix.n_cols;
+//    uint nz = matrix.n_slices;
 
-    ofile << "# vtk DataFile Version 2.0" << endl;
-    ofile << "structured point" << endl;
-    ofile << "ASCII" << endl;
-    ofile << endl;
-    ofile << "DATASET STRUCTURED_POINTS" << endl;
-    ofile << "DIMENSIONS " << nx << " " << ny << " " << nz << endl;
-    // ofile << "ORIGIN 0.0 0.0 0.0" << endl;
-    ofile << "ORIGIN " << setprecision(16) << voxel_size_angstrom[0]/2.0 << " " << voxel_size_angstrom[1]/2.0 << " " << voxel_size_angstrom[2]/2.0 << endl;
-    // ofile << "SPACING " << 1.0/double(nx) << " " << 1.0/double(ny) << " " << 1.0/double(nz) << endl;
-    ofile << "SPACING " << setprecision(16) << voxel_size_angstrom[0] << " " << voxel_size_angstrom[0] << " " << voxel_size_angstrom[0] << endl;
-    ofile << "POINT_DATA " << nx*ny*nz << endl;
-    ofile << "SCALARS occupation double" << endl;
-    ofile << "LOOKUP_TABLE default" << endl;
-    ofile << endl;
+//    ofile << "# vtk DataFile Version 2.0" << endl;
+//    ofile << "structured point" << endl;
+//    ofile << "ASCII" << endl;
+//    ofile << endl;
+//    ofile << "DATASET STRUCTURED_POINTS" << endl;
+//    ofile << "DIMENSIONS " << nx << " " << ny << " " << nz << endl;
+//    // ofile << "ORIGIN 0.0 0.0 0.0" << endl;
+//    ofile << "ORIGIN " << setprecision(16) << voxel_size_angstrom[0]/2.0 << " " << voxel_size_angstrom[1]/2.0 << " " << voxel_size_angstrom[2]/2.0 << endl;
+//    // ofile << "SPACING " << 1.0/double(nx) << " " << 1.0/double(ny) << " " << 1.0/double(nz) << endl;
+//    ofile << "SPACING " << setprecision(16) << voxel_size_angstrom[0] << " " << voxel_size_angstrom[0] << " " << voxel_size_angstrom[0] << endl;
+//    ofile << "POINT_DATA " << nx*ny*nz << endl;
+//    ofile << "SCALARS occupation double" << endl;
+//    ofile << "LOOKUP_TABLE default" << endl;
+//    ofile << endl;
 
-    // column major ordering
-    for (uint k = 0; k < nz; k++){
-        for (uint j = 0; j < ny; j++){
-            for (uint i = 0; i < nx; i++){
-                ofile << matrix(i,j,k) << endl;
-            }
-        }
-    }
+//    // column major ordering
+//    for (uint k = 0; k < nz; k++){
+//        for (uint j = 0; j < ny; j++){
+//            for (uint i = 0; i < nx; i++){
+//                ofile << matrix(i,j,k) << endl;
+//            }
+//        }
+//    }
 
-    // // row major ordering
-    // for (int i = 0; i < matrix_dim_x; i++) {
-    //     for (int j = 0; j < matrix_dim_y; j++) {
-    //         for (int k = 0; k < matrix_dim_z; k++) {
-    //             ofile << matrix[i][j][k] << endl;
-    //         }
-    //     }
-    // }
+//    // // row major ordering
+//    // for (int i = 0; i < matrix_dim_x; i++) {
+//    //     for (int j = 0; j < matrix_dim_y; j++) {
+//    //         for (int k = 0; k < matrix_dim_z; k++) {
+//    //             ofile << matrix[i][j][k] << endl;
+//    //         }
+//    //     }
+//    // }
 
-    ofile.close();
+//    ofile.close();
 
-    cout << "Finished printing to .vtk-format." << endl;
-}
+//    cout << "Finished printing to .vtk-format." << endl;
+//}
 
 vector<vector<uint> > create_radial_neighbor_list(Mts0_io* mts0_io, const double neighbor_list_radius) {
     /*
