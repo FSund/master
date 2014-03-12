@@ -1,4 +1,4 @@
-function [H, n_vec, sigma_DMA_squared] = estimate_Hurst_HDDMA(f, theta, n_min, n_max, n_step, show_plot)
+function [H, n_vec, sigma_DMA_squared, fit] = estimate_Hurst_HDDMA(f, theta, n_min, n_max, n_step, show_plot)
 
 %
 % Higher-Dimensional Detrending Moving Average
@@ -77,8 +77,8 @@ end
 if (dim < 1)
     error('Input dimension too low');
 end
-if (n_max <= 2)
-    error('n_max should be > 2')
+if (n_min < 2)
+    error('n_min should be > 2')
 end
 if (n_max < n_min)
     error('n_max should be > n_min')
@@ -91,7 +91,9 @@ if (n_max > floor(N/4))
     error('n_max should be << N (n_max < N/4)')
 end
 
-n_vec = n_min:n_step:n_max;
+% n_vec = n_min:n_step:n_max;
+n_vec = round(logspace(log10(n_min), log10(n_max), round((n_max-n_min)/n_step)));
+n_vec = unique(n_vec);
 sigma_DMA_squared = zeros(1, length(n_vec));
 
 % debug %
@@ -209,6 +211,7 @@ if dim==2
     end
     
     if true
+        reverseStr = '';
         % New new implementation
         for i_n = 1:length(n_vec) % loop over window sizes
             n = n_vec(i_n);
@@ -250,12 +253,19 @@ if dim==2
                 end
             end
             sigma_DMA_squared(i_n) = sigma_DMA_squared(i_n)/(N - max(n_vec))^2;
+            
+%             fprintf('%.2f%', 100*n/max(n_vec));
+            msg = sprintf('Processed %d%s', round(100*n/max(n_vec)), '%%');
+            fprintf([reverseStr, msg]);
+            reverseStr = repmat(sprintf('\b'), 1, length(msg)-1);
         end
+        fprintf(reverseStr);
     end
 end
 
-x = log(dim.*(n_vec.*n_vec));
-y = log(sigma_DMA_squared);
+x = log10(dim.*(n_vec.*n_vec));
+% x = log10(n_vec);
+y = log10(sigma_DMA_squared);
 fit = polyfit(x, y, 1);
 H = fit(1);
 
