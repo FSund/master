@@ -181,3 +181,150 @@ void Mesher::printToMsh(std::string filename) {
 
     ofile.close();
 }
+
+void Mesher::printToPLY(std::string filename) {
+
+    ofstream ofile;
+    ofile.open(filename);
+
+    ofile << "ply" << endl;
+    ofile << "format ascii 1.0" << endl;
+    ofile << "comment made by Filip" << endl;
+
+    // Define "vertex" element, and how many
+    ofile << "element vertex " << 2*nGridPoints << endl;
+    ofile << "property float x" << endl;
+    ofile << "property float y" << endl;
+    ofile << "property float z" << endl;
+
+    // Define "face" element, and how many
+    ofile << "element face " << 4*tetrahedrons.size() << endl;
+    ofile << "property list uchar int vertex_index" << endl;
+
+    ofile << "end_header" << endl;
+
+    // Print nodes/vertices/points to file //
+        // formatting:
+        // x1  y1  z1
+    for (uint i = 0; i < 2*nGridPoints; i++) {
+        ofile << nodes(i,0) << " "; // x-coordinate
+        ofile << nodes(i,1) << " "; // y-coordinate
+        ofile << nodes(i,2);        // z-coordinate
+        ofile << endl;
+    }
+
+    // Print faces to file //
+        // formatting:
+        // number_of_vertices vertex0 vertex1 vertex2
+    vector<vector<uint> > face_indices(4);
+    face_indices[0] = {0, 1, 2};
+    face_indices[1] = {1, 2, 3};
+    face_indices[2] = {0, 2, 3};
+    face_indices[3] = {0, 1, 3};
+
+    for (uint i = 0; i < tetrahedrons.size(); i++) {
+        for (uint j = 0; j < face_indices.size(); j++) {
+            ofile << "3 "; // number of vertices
+            for (auto k = face_indices[j].begin(); k != face_indices[j].end(); ++k) {
+                ofile << tetrahedrons[i][*k] << " ";
+            }
+            ofile << endl;
+        }
+
+//        for (auto element = elements->begin(); element != elements->end(); ++element) {
+//            ofile << (*element) << " "; // vertex number
+//        }
+//        ofile << endl;
+    }
+
+    ofile.close();
+}
+
+//    ply
+//    format ascii 1.0           { ascii/binary, format version number }
+//    comment made by Greg Turk  { comments keyword specified, like all lines }
+//    comment this file is a cube
+//    element vertex 8           { define "vertex" element, 8 of them in file }
+//    property float x           { vertex contains float "x" coordinate }
+//    property float y           { y coordinate is also a vertex property }
+//    property float z           { z coordinate, too }
+//    element face 6             { there are 6 "face" elements in the file }
+//    property list uchar int vertex_index { "vertex_indices" is a list of ints }
+//    end_header                 { delimits the end of the header }
+//    0 0 0                      { start of vertex list }
+//    0 0 1
+//    0 1 1
+//    0 1 0
+//    1 0 0
+//    1 0 1
+//    1 1 1
+//    1 1 0
+//    4 0 1 2 3                  { start of face list }
+//    4 7 6 5 4
+//    4 0 4 5 1
+//    4 1 5 6 2
+//    4 2 6 7 3
+//    4 3 7 4 0
+
+//void Mesher::printToSTL(std::string filename) {
+
+////    solid name
+////        facet normal ni nj nk
+////            outer loop
+////                vertex v1x v1y v1z
+////                vertex v2x v2y v2z
+////                vertex v3x v3y v3z
+////            endloop
+////        endfacet
+////    endsolid name
+
+//    ofstream ofile;
+//    ofile.open(filename);
+
+//    ofile << "$MeshFormat" << endl;
+//    ofile << "2.2 0 8" << endl;
+//    ofile << "$EndMeshFormat" << endl;
+//    ofile << "$Comments" << endl;
+//    // optional comments
+//    ofile << "$EndComments" << endl;
+
+//    // Print nodes (points) to file //
+//        // formatting:
+//        // number-of-nodes
+//        // node-number  x1  y1  z1
+//    ofile << "$Nodes" << endl;
+//    ofile << 2*nGridPoints << endl;
+
+//    // Printing nodes to file
+//    double gridNorm = 1.0/(gridSize-1); // scaling the grid so x and y is in [0,1]
+//    for (uint i = 0; i < 2*nGridPoints; i++) {
+//        ofile << i+1 << " ";                 // node number (numbering starts at 1 in .msh files)
+//        ofile << nodes(i,0)*gridNorm << " "; // x-coordinate
+//        ofile << nodes(i,1)*gridNorm << " "; // y-coordinate
+//        ofile << nodes(i,2);                 // z-coordinate
+//        ofile << endl;
+//    }
+//    ofile << "$EndNodes" << endl;
+
+//    // Print elements (tetrahedrons) to file //
+//        // formatting:
+//        // number-of-elements
+//        // element-number  element-type(4 for 4-node tetrahedron)  number-of-tags(set to 2)  tags: "0 0"  node-numbers(4 of them for tetrahedron)
+//        // example: 4588 4 2 0 30 96 463 97 1677
+//    ofile << "$Elements" << endl;
+//    ofile << tetrahedrons.size() << endl;
+
+//    uint counter = 1;
+//    for (auto elements = tetrahedrons.begin(); elements != tetrahedrons.end(); ++elements) {
+//        ofile << counter << " 4 2 0 1 ";
+//        for (auto element = elements->begin(); element != elements->end(); ++element) {
+//            ofile << (*element) + 1 << " "; // counting starts at 1 in .msh files
+//        }
+//        ofile << endl;
+//        counter++;
+//    }
+
+//    ofile << "$EndElements" << endl;
+
+//    ofile.close();
+//}

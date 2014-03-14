@@ -131,7 +131,7 @@ int main(int nArgs, const char *argv[]) {
         ofile << "------------------------------------------------" << endl;
 
     } else if (mode == "load") {
-        if (nArgs < 4) {
+        if (nArgs < 5) {
             cout << "Error: Load mode needs at least \"bottom_surface_filename\", \"top_surface_filename\" and \"output_filename\" arguments. Aborting.!" << endl;
             exit(1);
         }
@@ -178,6 +178,7 @@ int main(int nArgs, const char *argv[]) {
     Mesher mesher;
     mesher.mesh(topHeightmap, bottomHeightmap);
     mesher.printToMsh(filename);
+    mesher.printToPLY("mesh.ply");
 
     cout << "max = " << max(max(topHeightmap)) << " " << max(max(bottomHeightmap)) << endl;
     cout << "min = " << min(min(topHeightmap)) << " " << min(min(bottomHeightmap)) << endl;

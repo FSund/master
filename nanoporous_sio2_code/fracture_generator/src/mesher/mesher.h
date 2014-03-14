@@ -20,6 +20,7 @@ public:
         return tetrahedrons;
     }
     void printToMsh(string filename);
+    void printToPLY(std::string filename);
 private:
     uint gridSize;
     uint nGridPoints;
