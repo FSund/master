@@ -3,6 +3,9 @@
 #include <iomanip>
 #include <string>
 #include <fstream>
+#include <vector>
+#include <algorithm>
+
 #include <voro++.hh>
 
 #include <mts0_io.h>
@@ -130,7 +133,11 @@ vector<vector<uint> > create_radial_neighbor_list(Mts0_io* mts0_io, const double
     return radial_neighbor_list;
 }
 
-double find_number_density_of_atom_type(Mts0_io *mts0_io, int atom_type) {
+double find_number_density_of_atom_type(
+    Mts0_io *mts0_io, 
+    int atom_type, 
+    bool discard_max_volumes_if_max_volume_much_larger_than_mean = false, 
+    double fraction_to_remove_if_max_volume_much_larger_than_mean = 0.1) {
 
     vector<double> system_size_angstrom = mts0_io->get_lx_ly_lz();
 
@@ -192,12 +199,91 @@ double find_number_density_of_atom_type(Mts0_io *mts0_io, int atom_type) {
     voro::c_loop_order clo(con, po);
     voro::voronoicell cell;
     double total_volume_of_voronoi_cells_of_wanted_atom_type = 0.0;
+    vector<double> volumes;
+
     if (clo.start()) { // May return false if there are no particles in particle_order po
         do if (con.compute_cell(cell, clo)) { // con.compute_cell() may return false if the cell couldn't be computed (ex: being completely removed by a wall)
+            volumes.push_back(cell.volume());
             total_volume_of_voronoi_cells_of_wanted_atom_type += cell.volume();
         } while (clo.inc()); // Increase c_loop_order to next particle, returns false if we're at the last particle
     }
     // cout << "Total volume of voronoi cells of atom with wanted type = " << total_volume_of_voronoi_cells_of_wanted_atom_type << endl;
+
+    // // TESTING //
+    // int n_atoms = volumes.size();
+
+    // std::sort(volumes.begin(), volumes.end());
+    // double min_volume = volumes[0];
+    // double max_volume = volumes.back();
+    // uint n_bins = 80;
+    // double bin_width = (max_volume*(1 + 1e-5) - min_volume)/double(n_bins);
+    // vector<int> bins(n_bins, 0);
+
+    // cout << "bin width = " << bin_width << endl;
+    // cout << "n bins = " << n_bins << endl;
+    // cout << "min volume = " << min_volume << endl;
+    // cout << "max volume = " << max_volume << endl;
+    // for (uint i = 0; i < volumes.size(); i++) {
+    //     int bin = std::floor((volumes[i] - min_volume)/bin_width);
+    //     if (bin < 0 || bin > n_bins) {
+    //         cout << "bin = " << bin << endl;
+    //     }
+    //     bins[bin]++;
+    // }
+
+    // int precision = 1;
+    // int width = 5;
+    // int w = 120;
+    // int max_count = *std::max_element(bins.begin(), bins.end());
+    // cout << "max count = " << max_count << endl;
+
+    // cout << endl;
+    // cout << "Volume distribution:" << endl;
+
+    // std::ostringstream out; // So we don't have to worry about resetting cout formatting flags
+    // for (uint i = 0; i < n_bins; i++) {
+    //     out << "[" 
+    //         << right << fixed << setw(width) << setfill(' ') << setprecision(precision) << min_volume + bin_width*i
+    //         << ", " 
+    //         << right << fixed << setw(width) << setfill(' ') << setprecision(precision) << min_volume + bin_width*(i+1) 
+    //         << "]";
+    //     out << " (" << setw(4) << setfill(' ') << bins[i] << ") ";
+    //     out << setw(std::round(w*bins[i]/double(max_count))) << setfill('#') << "" << endl;
+    // }
+    // cout << out.str();
+    // cout << endl;
+
+    // int count = 0;
+    // int i = 0;
+    // while (count < n_atoms*0.9) {
+    //     count += bins[i];
+    //     i++;
+    // }
+    // cout << "bin = " << i << " = [" << min_volume + bin_width*i << ", " << min_volume + bin_width*(i+1) << "]" << endl;
+    // cout << "count = " << count << endl;
+
+    // double tail_cutoff = 0.8; // maybe find this from distribution, where count has fallen below percentage of max count?
+    // double volume_cutoff = max_volume*tail_cutoff;
+    // volume_cutoff = 43.2;
+    // cout << "volume cutoff = " << volume_cutoff << endl;
+
+    // int n_atoms_to_include_in_average = 0;
+    // double sum_of_volumes_to_include_in_average = 0.0;
+    // for (uint i = 0; i < volumes.size(); i++) {
+    //     if (volumes[i] < volume_cutoff) {
+    //         n_atoms_to_include_in_average++;
+    //         sum_of_volumes_to_include_in_average += volumes[i];
+    //     }
+    // }
+    // cout << endl;
+    // cout << "average volume with cutoff = " << sum_of_volumes_to_include_in_average/double(n_atoms_to_include_in_average) << endl;
+    // cout << "average volume without cutoff = " << total_volume_of_voronoi_cells_of_wanted_atom_type/double(n_atoms_of_wanted_type) << endl;
+    // cout << "average number density with cutoff = " << n_atoms_to_include_in_average/sum_of_volumes_to_include_in_average << endl;
+    // cout << "average number density without cutoff = " << n_atoms_of_wanted_type/total_volume_of_voronoi_cells_of_wanted_atom_type << endl;
+    // // TESTING //
+
+    // IMPLEMENTING CUTOFF //
+    // IMPLEMENTING CUTOFF //
 
     // // Sum up the volumes, and check that this matches the container volume
     // double system_volume_angstrom = (x_max - x_min)*(y_max - y_min)*(x_max - x_min);
@@ -210,8 +296,34 @@ double find_number_density_of_atom_type(Mts0_io *mts0_io, int atom_type) {
     if (n_atoms_of_wanted_type == 0) {
         number_density = 0.0;
     } else {
-        number_density = n_atoms_of_wanted_type/total_volume_of_voronoi_cells_of_wanted_atom_type;
+        if (discard_max_volumes_if_max_volume_much_larger_than_mean) {
+
+            double max_volume = *std::max_element(volumes.begin(), volumes.end());
+            double mean_volume = total_volume_of_voronoi_cells_of_wanted_atom_type/double(n_atoms_of_wanted_type);
+            if (max_volume/mean_volume > 2.0) {
+
+                // We discard the top 10% volumes if the max volume is more than twice the mean volume, since we likely
+                // have a system with some vacuum (we usually measure water, so this means we have vacuum between water molecules)
+                std::sort(volumes.begin(), volumes.end());
+                int n_volumes = volumes.size();
+
+                double cutoff = 1.0 - fraction_to_remove_if_max_volume_much_larger_than_mean;
+                int n_volumes_after_cutoff = n_volumes*cutoff;
+
+                double sum_of_volumes_with_cutoff = 0.0;
+                for (int i = 0; i < n_volumes_after_cutoff; i++) {
+                    sum_of_volumes_with_cutoff += volumes[i];
+                }
+                number_density = n_volumes_after_cutoff/sum_of_volumes_with_cutoff;
+                cout << "In find_number_density_of_atom_type: removed the top " << n_volumes - n_volumes_after_cutoff << " volumes (" << 100*(1.0 - double(n_volumes_after_cutoff)/double(n_volumes)) <<  "%)" << endl;
+            } else {
+                number_density = n_atoms_of_wanted_type/total_volume_of_voronoi_cells_of_wanted_atom_type;
+            }
+        } else{
+            number_density = n_atoms_of_wanted_type/total_volume_of_voronoi_cells_of_wanted_atom_type;
+        }
     }
+
     return number_density;
 }
 
